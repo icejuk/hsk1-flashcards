@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>พินอิน — สระ + พยัญชนะจีน</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, #b71c1c, #e53935);
+      color: white; padding: 12px 16px 10px;
+      text-align: center; position: sticky; top: 0; z-index: 20;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    header h1 { font-size: 16px; font-weight: 800; letter-spacing: 0.3px; }
+    header .sub { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+
+    .tabs {
+      display: flex; background: white;
+      border-bottom: 1px solid #ddd;
+      position: sticky; top: 50px; z-index: 19;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow-x: auto;
+    }
+    .tab {
+      flex: 1; padding: 9px 4px; text-align: center;
+      font-size: 11px; font-weight: 600; color: #999;
+      cursor: pointer; border-bottom: 2.5px solid transparent;
+      transition: all 0.2s; user-select: none; white-space: nowrap;
+      min-width: 60px;
+    }
+    .tab.active { color: #c62828; border-bottom-color: #c62828; }
+
+    .content { padding: 8px 8px 24px; }
+
+    .section { margin-bottom: 10px; }
+    .section.hidden { display: none; }
+
+    .sec-title {
+      font-size: 10px; font-weight: 700; color: #888;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 6px 4px 5px;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+
+    .card {
+      background: white; border-radius: 10px;
+      padding: 9px 3px 7px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.09);
+      cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+      border: 1.5px solid transparent; user-select: none;
+    }
+    .card:active { transform: scale(0.91); }
+    .card.playing {
+      border-color: #e53935; background: #fff5f5;
+      box-shadow: 0 0 0 2px rgba(229,57,53,0.18);
+    }
+
+    .pinyin {
+      font-size: 19px; font-weight: 900;
+      color: #c62828; line-height: 1;
+      letter-spacing: -0.3px;
+    }
+    .pinyin.sm { font-size: 14px; }
+    .card .zh { font-size: 13px; color: #bbb; margin-top: 1px; }
+    .thai {
+      font-size: 10px; color: #555;
+      margin-top: 3px; line-height: 1.3;
+      min-height: 14px;
+    }
+    .play-btn {
+      display: inline-block; margin-top: 4px;
+      font-size: 10px; color: #ccc;
+      width: 18px; height: 18px; line-height: 18px;
+      border-radius: 50%; background: #f5f5f5;
+      transition: all 0.15s;
+    }
+    .card.playing .play-btn { background: #e53935; color: white; }
+
+    /* Consonant group block */
+    .con-group { margin-bottom: 10px; }
+    .con-group-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 4px 4px;
+    }
+    .con-group-name {
+      font-size: 11px; font-weight: 800; color: #333;
+    }
+    .rule-badge {
+      font-size: 9.5px; font-weight: 600; padding: 2px 7px;
+      border-radius: 99px; white-space: nowrap;
+    }
+    .badge-ok   { background: #e8f5e9; color: #2e7d32; }
+    .badge-warn { background: #fff3e0; color: #e65100; }
+    .badge-err  { background: #ffebee; color: #c62828; }
+    .badge-special { background: #e8eaf6; color: #3949ab; }
+
+    .con-note {
+      margin-top: 6px; padding: 7px 10px;
+      border-radius: 0 8px 8px 0; font-size: 10px; color: #555;
+      line-height: 1.6; border-left-width: 3px; border-left-style: solid;
+    }
+    .con-note b { font-weight: 700; }
+    .cn-blue  { background: #e3f2fd; border-color: #1565c0; }
+    .cn-purple{ background: #f3e5f5; border-color: #7b1fa2; }
+    .cn-green { background: #e8f5e9; border-color: #2e7d32; }
+    .cn-orange{ background: #fff3e0; border-color: #e65100; }
+    .cn-red   { background: #ffebee; border-color: #c62828; }
+    .cn-teal  { background: #e0f2f1; border-color: #00695c; }
+
+    /* consonant card accent colors */
+    .card.blue   .pinyin { color: #1565c0; }
+    .card.blue.playing   { border-color: #1565c0; background: #e3f2fd; }
+    .card.blue.playing .play-btn { background: #1565c0; }
+    .card.purple .pinyin { color: #7b1fa2; }
+    .card.purple.playing { border-color: #7b1fa2; background: #f3e5f5; }
+    .card.purple.playing .play-btn { background: #7b1fa2; }
+    .card.green  .pinyin { color: #2e7d32; }
+    .card.green.playing  { border-color: #2e7d32; background: #e8f5e9; }
+    .card.green.playing .play-btn { background: #2e7d32; }
+    .card.orange .pinyin { color: #e65100; }
+    .card.orange.playing { border-color: #e65100; background: #fff3e0; }
+    .card.orange.playing .play-btn { background: #e65100; }
+    .card.red    .pinyin { color: #c62828; }
+    .card.teal   .pinyin { color: #00695c; }
+    .card.teal.playing   { border-color: #00695c; background: #e0f2f1; }
+    .card.teal.playing .play-btn { background: #00695c; }
+
+    .note {
+      margin-top: 8px; padding: 8px 10px;
+      background: #fffde7; border-left: 3px solid #fbc02d;
+      border-radius: 0 8px 8px 0; font-size: 10.5px; color: #555;
+      line-height: 1.6;
+    }
+    .note b { color: #e65100; }
+
+    .no-audio {
+      display: none; text-align: center;
+      padding: 8px; font-size: 11px; color: #e53935;
+      background: #fff3f3; border-radius: 8px; margin-bottom: 8px;
+    }
+
+    .combo-box {
+      margin-top: 10px; background: white; border-radius: 10px;
+      padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.09);
+    }
+    .combo-title {
+      font-size: 10px; font-weight: 800; color: #888;
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+    }
+    .combo-row {
+      display: flex; align-items: flex-start;
+      font-size: 10.5px; color: #444; margin-bottom: 5px; gap: 6px;
+      line-height: 1.5;
+    }
+    .combo-row .label {
+      font-weight: 800; min-width: 56px; color: #c62828;
+    }
+    .combo-row.blue .label   { color: #1565c0; }
+    .combo-row.purple .label { color: #7b1fa2; }
+    .combo-row.green .label  { color: #2e7d32; }
+    .combo-row.orange .label { color: #e65100; }
+    .combo-row.red .label    { color: #c62828; }
+    .combo-row.teal .label   { color: #00695c; }
+
+    /* Example tab */
+    .ex-group { margin-bottom: 10px; }
+    .ex-group-label {
+      font-size: 11px; font-weight: 800; padding: 5px 4px 4px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ex-con { font-size: 18px; color: #c62828; font-weight: 900; min-width: 22px; }
+    .ex-con.blue   { color: #1565c0; }
+    .ex-con.purple { color: #7b1fa2; }
+    .ex-con.green  { color: #2e7d32; }
+    .ex-con.orange { color: #e65100; }
+    .ex-con.teal   { color: #00695c; }
+    .ex-con-th { font-size: 10px; color: #999; font-weight: 400; }
+    .ex-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .ex-card {
+      background: white; border-radius: 8px;
+      padding: 7px 3px 6px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      cursor: pointer; border: 1.5px solid transparent;
+      transition: transform 0.12s; user-select: none;
+    }
+    .ex-card:active { transform: scale(0.9); }
+    .ex-card.playing { border-color: #e53935; background: #fff5f5; }
+    .ex-card.playing.blue   { border-color: #1565c0; background: #e3f2fd; }
+    .ex-card.playing.purple { border-color: #7b1fa2; background: #f3e5f5; }
+    .ex-card.playing.green  { border-color: #2e7d32; background: #e8f5e9; }
+    .ex-card.playing.orange { border-color: #e65100; background: #fff3e0; }
+    .ex-card.playing.teal   { border-color: #00695c; background: #e0f2f1; }
+    .ex-py {
+      font-size: 13px; font-weight: 800; color: #c62828; line-height: 1;
+    }
+    .ex-card.blue   .ex-py { color: #1565c0; }
+    .ex-card.purple .ex-py { color: #7b1fa2; }
+    .ex-card.green  .ex-py { color: #2e7d32; }
+    .ex-card.orange .ex-py { color: #e65100; }
+    .ex-card.teal   .ex-py { color: #00695c; }
+    .ex-zh { font-size: 18px; color: #333; margin-top: 1px; line-height: 1; }
+    .ex-th { font-size: 9.5px; color: #777; margin-top: 3px; line-height: 1.2; }
+    .ex-play { font-size: 9px; color: #ddd; margin-top: 3px; }
+    .ex-card.playing .ex-play { color: #e53935; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🇨🇳 พินอิน — แตะเพื่อฟังเสียง</h1>
+  <div class="sub">สระเดี่ยว • สระผสม • สระนาสิก • พยัญชนะ</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="setTab(this,'all')">ทั้งหมด</div>
+  <div class="tab" onclick="setTab(this,'single')">สระเดี่ยว</div>
+  <div class="tab" onclick="setTab(this,'compound')">สระผสม</div>
+  <div class="tab" onclick="setTab(this,'nasal')">สระนาสิก</div>
+  <div class="tab" onclick="setTab(this,'consonant')">พยัญชนะ</div>
+  <div class="tab" onclick="setTab(this,'example')">ตัวอย่าง</div>
+</div>
+
+<div class="content">
+  <div class="no-audio" id="noAudio">⚠️ เบราว์เซอร์นี้ไม่รองรับเสียง กรุณาใช้ Chrome หรือ Safari</div>
+
+  <!-- สระเดี่ยว -->
+  <div class="section" data-type="single">
+    <div class="sec-title">สระเดี่ยว — 6 ตัว</div>
+    <div class="grid" id="g-single"></div>
+  </div>
+
+  <!-- สระผสม -->
+  <div class="section" data-type="compound">
+    <div class="sec-title">สระผสม — 13 ตัว</div>
+    <div class="grid" id="g-compound"></div>
+  </div>
+
+  <!-- สระนาสิก -->
+  <div class="section" data-type="nasal">
+    <div class="sec-title">สระนาสิก — 16 ตัว</div>
+    <div class="grid" id="g-nasal"></div>
+    <div class="note">
+      <b>ü</b> = ปากห่อวงกลม ออกเสียง อี &nbsp;|&nbsp;
+      <b>e</b> = เสียงลึกจากคอ ≠ "เอ" &nbsp;|&nbsp;
+      <b>er</b> = มีเสียง ร แทรก &nbsp;|&nbsp;
+      <b>eng</b> = เอิ่ง (ลิ้นไม่แตะ)
+    </div>
+  </div>
+
+  <!-- ตัวอย่าง -->
+  <div class="section hidden" data-type="example">
+    <div class="sec-title">ตัวอย่างคำ — พยัญชนะ + สระ</div>
+    <div id="example-groups"></div>
+  </div>
+
+  <!-- พยัญชนะ -->
+  <div class="section hidden" data-type="consonant">
+    <div class="sec-title">พยัญชนะต้น — 21 ตัว</div>
+    <div id="consonant-groups"></div>
+
+    <!-- ตารางกฎการใช้ร่วม -->
+    <div class="combo-box">
+      <div class="combo-title">กฎการใช้ร่วมกับสระ</div>
+      <div class="combo-row blue">
+        <span class="label">b p m f</span>
+        <span>ใช้กับ a / o / u / i ได้ — <b>ไม่ใช้กับ ü</b></span>
+      </div>
+      <div class="combo-row purple">
+        <span class="label">d t n l</span>
+        <span>n, l ใช้กับ ü ได้ (nü, lü) — d, t <b>ไม่ใช้กับ ü</b></span>
+      </div>
+      <div class="combo-row green">
+        <span class="label">g k h</span>
+        <span><b>ไม่ใช้กับ i และ ü</b> เลย (ไม่มี gi, ki, hi)</span>
+      </div>
+      <div class="combo-row orange">
+        <span class="label">j q x</span>
+        <span>ใช้กับ i และ ü <b>เท่านั้น</b> — เมื่อเจอ ü จะเขียน u (ju = jü)</span>
+      </div>
+      <div class="combo-row red">
+        <span class="label">zh ch sh r</span>
+        <span>ใช้กับ a / o / e / u — <b>ไม่ใช้กับ ü</b> — เสียง i พิเศษ (ม้วนลิ้น)</span>
+      </div>
+      <div class="combo-row teal">
+        <span class="label">z c s</span>
+        <span>ใช้กับ a / o / e / u — <b>ไม่ใช้กับ ü</b> — เสียง i พิเศษ (ดึงลิ้น)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const vowelData = {
+  single: [
+    { p:'a',  th:'อา',           zh:'啊' },
+    { p:'o',  th:'โอ',           zh:'哦' },
+    { p:'e',  th:'เออ (ลึก)',    zh:'鹅' },
+    { p:'i',  th:'อี',           zh:'一' },
+    { p:'u',  th:'อู',           zh:'乌' },
+    { p:'ü',  th:'อวี (ห่อปาก)',zh:'鱼' },
+  ],
+  compound: [
+    { p:'ai',  th:'อ้าย',   zh:'爱' },
+    { p:'ei',  th:'เอย',    zh:'诶' },
+    { p:'ao',  th:'เอา',    zh:'熬' },
+    { p:'ou',  th:'โอว',    zh:'欧' },
+    { p:'ia',  th:'อีอา',   zh:'呀' },
+    { p:'ie',  th:'อีเอ',   zh:'耶' },
+    { p:'ua',  th:'อัวอา',  zh:'蛙' },
+    { p:'uo',  th:'อัวโอ',  zh:'窝' },
+    { p:'üe',  th:'อวีเอ',  zh:'约' },
+    { p:'iao', th:'อีเอา',  zh:'要' },
+    { p:'iou', th:'อีโอว',  zh:'优' },
+    { p:'uai', th:'อัวไอ',  zh:'外' },
+    { p:'uei', th:'อัวเอย', zh:'威' },
+  ],
+  nasal: [
+    { p:'an',   th:'อาน',    zh:'安' },
+    { p:'en',   th:'เอิน',   zh:'恩' },
+    { p:'ang',  th:'อาง',    zh:'昂' },
+    { p:'eng',  th:'เอิง',   zh:'鞥' },
+    { p:'ong',  th:'อง',     zh:'翁' },
+    { p:'er',   th:'เอ้อร์', zh:'儿' },
+    { p:'in',   th:'อิน',    zh:'因' },
+    { p:'ing',  th:'อิง',    zh:'英' },
+    { p:'ian',  th:'อีเยน',  zh:'烟' },
+    { p:'iang', th:'อีอาง',  zh:'央' },
+    { p:'iong', th:'อีอง',   zh:'用' },
+    { p:'uan',  th:'อัวอาน', zh:'弯' },
+    { p:'uang', th:'อัวอาง', zh:'旺' },
+    { p:'un',   th:'อัวน',   zh:'温' },
+    { p:'üan',  th:'อวีเยน', zh:'元' },
+    { p:'ün',   th:'อวีน',   zh:'晕' },
+  ]
+};
+
+const consonantGroups = [
+  {
+    name: 'ริมฝีปาก', color: 'blue', noteClass: 'cn-blue',
+    badges: [
+      { text:'✓ a o u i', cls:'badge-ok' },
+      { text:'✗ ü', cls:'badge-err' },
+    ],
+    note: '<b>b p</b> ต่างกันที่ลม: b ไม่พ่นลม / p พ่นลม (เหมือน ป vs พ ในไทย) — <b>f</b> ใช้ได้แค่กับ a, o, u (ไม่มี fi)',
+    items: [
+      { p:'b', th:'บ (ไม่พ่นลม)', zh:'爸' },
+      { p:'p', th:'พ (พ่นลม)',    zh:'怕' },
+      { p:'m', th:'ม',            zh:'妈' },
+      { p:'f', th:'ฝ',            zh:'发' },
+    ]
+  },
+  {
+    name: 'ปุ่มเหงือก', color: 'purple', noteClass: 'cn-purple',
+    badges: [
+      { text:'✓ a o e u i', cls:'badge-ok' },
+      { text:'n,l + ü ✓', cls:'badge-ok' },
+      { text:'d,t + ü ✗', cls:'badge-warn' },
+    ],
+    note: '<b>n</b> และ <b>l</b> ใช้กับ ü ได้ → nü (หนู), lü (สีเขียว) — <b>d t</b> ไม่มีคำที่ใช้กับ ü',
+    items: [
+      { p:'d', th:'ด (ไม่พ่นลม)', zh:'大' },
+      { p:'t', th:'ท (พ่นลม)',    zh:'他' },
+      { p:'n', th:'น',            zh:'你' },
+      { p:'l', th:'ล',            zh:'来' },
+    ]
+  },
+  {
+    name: 'เพดานอ่อน', color: 'green', noteClass: 'cn-green',
+    badges: [
+      { text:'✓ a o e u', cls:'badge-ok' },
+      { text:'✗ i และ ü', cls:'badge-err' },
+    ],
+    note: '<b>g k h</b> ใช้กับ a/o/e/u เท่านั้น — ไม่มี gi, ki, hi, gü, kü, hü ในภาษาจีน',
+    items: [
+      { p:'g', th:'ก (ไม่พ่นลม)',  zh:'个' },
+      { p:'k', th:'ข (พ่นลม)',     zh:'可' },
+      { p:'h', th:'ฮ (เสียดแทรก)', zh:'好' },
+    ]
+  },
+  {
+    name: 'เพดานแข็ง', color: 'orange', noteClass: 'cn-orange',
+    badges: [
+      { text:'✓ i และ ü เท่านั้น', cls:'badge-warn' },
+      { text:'ü → เขียนเป็น u', cls:'badge-special' },
+    ],
+    note: '<b>j q x</b> ใช้กับ i และ ü เท่านั้น — เมื่อเจอ ü จะเขียน u แต่ออกเสียง ü: ju = จวี, qu = ชวี, xu = ซวี — <b>ไม่มี</b> ja, jo, je, ju(อู)',
+    items: [
+      { p:'j', th:'จ (ไม่พ่นลม)',  zh:'家' },
+      { p:'q', th:'ช (พ่นลม)',     zh:'去' },
+      { p:'x', th:'ซ (เสียดแทรก)', zh:'西' },
+    ]
+  },
+  {
+    name: 'ม้วนลิ้น (Retroflex)', color: 'red', noteClass: 'cn-red',
+    badges: [
+      { text:'✓ a o e u', cls:'badge-ok' },
+      { text:'✗ ü', cls:'badge-err' },
+      { text:'i = เสียงพิเศษ', cls:'badge-special' },
+    ],
+    note: '<b>zh ch sh r</b> ต้องม้วนลิ้นขึ้นแตะเพดาน — เสียง i ใน zhi/chi/shi/ri ไม่ใช่ "อี" ปกติ แต่เป็นเสียงหึ่งที่เกิดจากการม้วนลิ้น',
+    items: [
+      { p:'zh', th:'จ (ม้วนลิ้น)',      zh:'这' },
+      { p:'ch', th:'ช (ม้วนลิ้น)',      zh:'吃' },
+      { p:'sh', th:'ช (เสียดแทรก+ม้วน)',zh:'是' },
+      { p:'r',  th:'ร (ม้วนลิ้น)',      zh:'人' },
+    ]
+  },
+  {
+    name: 'ไม่ม้วนลิ้น (Sibilant)', color: 'teal', noteClass: 'cn-teal',
+    badges: [
+      { text:'✓ a o e u', cls:'badge-ok' },
+      { text:'✗ ü', cls:'badge-err' },
+      { text:'i = เสียงพิเศษ', cls:'badge-special' },
+    ],
+    note: '<b>z c s</b> ลิ้นอยู่ข้างหน้า ไม่ม้วน — เสียง i ใน zi/ci/si เป็นเสียงหึ่งที่เกิดจากการดึงลิ้น ต่างจากกลุ่มม้วนลิ้น',
+    items: [
+      { p:'z', th:'จ (ไม่ม้วน)', zh:'字' },
+      { p:'c', th:'ช (ไม่ม้วน)', zh:'次' },
+      { p:'s', th:'ซ (ไม่ม้วน)', zh:'四' },
+    ]
+  },
+];
+
+const exampleData = [
+  { con:'b',  color:'blue',   th:'บ',  items:[
+    {py:'bā', zh:'八', mean:'แปด'},      {py:'bǐ', zh:'笔', mean:'ปากกา'},
+    {py:'bù', zh:'不', mean:'ไม่'},      {py:'bái', zh:'白', mean:'ขาว'},
+  ]},
+  { con:'p',  color:'blue',   th:'พ',  items:[
+    {py:'pá', zh:'爬', mean:'ปีน'},      {py:'pí', zh:'皮', mean:'ผิวหนัง'},
+    {py:'pǔ', zh:'普', mean:'ทั่วไป'},   {py:'pào', zh:'泡', mean:'ฟอง'},
+  ]},
+  { con:'m',  color:'blue',   th:'ม',  items:[
+    {py:'mā', zh:'妈', mean:'แม่'},      {py:'mǐ', zh:'米', mean:'ข้าว'},
+    {py:'mù', zh:'木', mean:'ไม้'},      {py:'měi', zh:'美', mean:'สวยงาม'},
+  ]},
+  { con:'f',  color:'blue',   th:'ฝ',  items:[
+    {py:'fā', zh:'发', mean:'ส่ง/ผม'},  {py:'fēng', zh:'风', mean:'ลม'},
+    {py:'fù', zh:'富', mean:'รวย'},      {py:'fàn', zh:'饭', mean:'ข้าว/อาหาร'},
+  ]},
+  { con:'d',  color:'purple', th:'ด',  items:[
+    {py:'dà', zh:'大', mean:'ใหญ่'},     {py:'dì', zh:'地', mean:'พื้นดิน'},
+    {py:'dū', zh:'都', mean:'ทั้งหมด'},  {py:'diǎn', zh:'点', mean:'จุด/นาที'},
+  ]},
+  { con:'t',  color:'purple', th:'ท',  items:[
+    {py:'tā', zh:'他', mean:'เขา'},      {py:'tǐ', zh:'体', mean:'ร่างกาย'},
+    {py:'tū', zh:'突', mean:'ทันที'},    {py:'tiān', zh:'天', mean:'ฟ้า/วัน'},
+  ]},
+  { con:'n',  color:'purple', th:'น',  items:[
+    {py:'nǎ', zh:'哪', mean:'ที่ไหน'},   {py:'nǐ', zh:'你', mean:'คุณ'},
+    {py:'nǚ', zh:'女', mean:'ผู้หญิง'},  {py:'niú', zh:'牛', mean:'วัว'},
+  ]},
+  { con:'l',  color:'purple', th:'ล',  items:[
+    {py:'lái', zh:'来', mean:'มา'},      {py:'lǐ', zh:'里', mean:'ข้างใน'},
+    {py:'lǚ', zh:'旅', mean:'ท่องเที่ยว'},{py:'liǎn', zh:'脸', mean:'ใบหน้า'},
+  ]},
+  { con:'g',  color:'green',  th:'ก',  items:[
+    {py:'gǎo', zh:'搞', mean:'ทำ/จัดการ'},{py:'gè', zh:'个', mean:'(ลักษณนาม)'},
+    {py:'gǒu', zh:'狗', mean:'หมา'},     {py:'guó', zh:'国', mean:'ประเทศ'},
+  ]},
+  { con:'k',  color:'green',  th:'ข',  items:[
+    {py:'kā', zh:'咖', mean:'(กาแฟ)'},  {py:'kě', zh:'可', mean:'ได้'},
+    {py:'kū', zh:'哭', mean:'ร้องไห้'},  {py:'kuài', zh:'快', mean:'เร็ว'},
+  ]},
+  { con:'h',  color:'green',  th:'ฮ',  items:[
+    {py:'hǎo', zh:'好', mean:'ดี'},      {py:'hé', zh:'和', mean:'และ'},
+    {py:'hū', zh:'呼', mean:'หายใจออก'},{py:'huā', zh:'花', mean:'ดอกไม้'},
+  ]},
+  { con:'j',  color:'orange', th:'จ',  items:[
+    {py:'jī', zh:'鸡', mean:'ไก่'},      {py:'jiā', zh:'家', mean:'บ้าน'},
+    {py:'jiǔ', zh:'酒', mean:'เหล้า'},   {py:'jú', zh:'局', mean:'สำนักงาน (jü)'},
+  ]},
+  { con:'q',  color:'orange', th:'ช',  items:[
+    {py:'qī', zh:'七', mean:'เจ็ด'},     {py:'qián', zh:'钱', mean:'เงิน'},
+    {py:'qǐng', zh:'请', mean:'กรุณา'}, {py:'qú', zh:'渠', mean:'คลอง (qü)'},
+  ]},
+  { con:'x',  color:'orange', th:'ซ',  items:[
+    {py:'xī', zh:'西', mean:'ตะวันตก'},  {py:'xiǎo', zh:'小', mean:'เล็ก'},
+    {py:'xué', zh:'学', mean:'เรียน'},   {py:'xū', zh:'须', mean:'จำเป็น (xü)'},
+  ]},
+  { con:'zh', color:'red',    th:'จ(ม้วน)', items:[
+    {py:'zhè', zh:'这', mean:'นี้'},      {py:'zhī', zh:'知', mean:'รู้'},
+    {py:'zhōng', zh:'中', mean:'กลาง/จีน'},{py:'zhǔ', zh:'主', mean:'หลัก'},
+  ]},
+  { con:'ch', color:'red',    th:'ช(ม้วน)', items:[
+    {py:'chī', zh:'吃', mean:'กิน'},     {py:'chá', zh:'茶', mean:'ชา'},
+    {py:'chē', zh:'车', mean:'รถ'},      {py:'chū', zh:'出', mean:'ออก'},
+  ]},
+  { con:'sh', color:'red',    th:'ช(เสียด+ม้วน)', items:[
+    {py:'shì', zh:'是', mean:'เป็น/ใช่'},{py:'shū', zh:'书', mean:'หนังสือ'},
+    {py:'shé', zh:'蛇', mean:'งู'},      {py:'shān', zh:'山', mean:'ภูเขา'},
+  ]},
+  { con:'r',  color:'red',    th:'ร(ม้วน)', items:[
+    {py:'rén', zh:'人', mean:'คน'},      {py:'rì', zh:'日', mean:'วัน/อาทิตย์'},
+    {py:'rú', zh:'如', mean:'เหมือน'},   {py:'ròu', zh:'肉', mean:'เนื้อ'},
+  ]},
+  { con:'z',  color:'teal',   th:'จ(ดึงลิ้น)', items:[
+    {py:'zì', zh:'字', mean:'ตัวอักษร'}, {py:'zǎo', zh:'早', mean:'เช้า'},
+    {py:'zé', zh:'则', mean:'กฎ'},       {py:'zū', zh:'租', mean:'เช่า'},
+  ]},
+  { con:'c',  color:'teal',   th:'ช(ดึงลิ้น)', items:[
+    {py:'cì', zh:'次', mean:'ครั้ง'},    {py:'cài', zh:'菜', mean:'ผัก/กับข้าว'},
+    {py:'cè', zh:'册', mean:'เล่ม'},     {py:'cū', zh:'粗', mean:'หยาบ'},
+  ]},
+  { con:'s',  color:'teal',   th:'ซ(ดึงลิ้น)', items:[
+    {py:'sì', zh:'四', mean:'สี่'},      {py:'sān', zh:'三', mean:'สาม'},
+    {py:'sè', zh:'色', mean:'สี'},       {py:'sū', zh:'苏', mean:'ฟื้นคืน'},
+  ]},
+];
+
+function buildExamples() {
+  const container = document.getElementById('example-groups');
+  exampleData.forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'ex-group';
+    wrap.innerHTML = `<div class="ex-group-label">
+      <span class="ex-con ${g.color}">${g.con}</span>
+      <span class="ex-con-th">${g.th}</span>
+    </div>`;
+    const grid = document.createElement('div');
+    grid.className = 'ex-grid';
+    g.items.forEach(v => {
+      const d = document.createElement('div');
+      d.className = `ex-card ${g.color}`;
+      d.innerHTML =
+        `<div class="ex-py">${v.py}</div>` +
+        `<div class="ex-zh">${v.zh}</div>` +
+        `<div class="ex-th">${v.mean}</div>` +
+        `<div class="ex-play">▶</div>`;
+      d.addEventListener('click', () => playSound(v.zh, d));
+      grid.appendChild(d);
+    });
+    wrap.appendChild(grid);
+    container.appendChild(wrap);
+  });
+}
+buildExamples();
+
+// build vowel grids
+function buildGrid(type) {
+  const grid = document.getElementById('g-' + type);
+  vowelData[type].forEach(v => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML =
+      `<div class="pinyin">${v.p}</div>` +
+      `<div class="zh">${v.zh}</div>` +
+      `<div class="thai">${v.th}</div>` +
+      `<div class="play-btn">▶</div>`;
+    d.addEventListener('click', () => playSound(v.zh, d));
+    grid.appendChild(d);
+  });
+}
+['single','compound','nasal'].forEach(buildGrid);
+
+// build consonant groups
+function buildConsonants() {
+  const container = document.getElementById('consonant-groups');
+  consonantGroups.forEach(g => {
+    const wrap = document.createElement('div');
+    wrap.className = 'con-group';
+
+    const header = document.createElement('div');
+    header.className = 'con-group-header';
+    header.innerHTML =
+      `<span class="con-group-name">${g.name}</span>` +
+      g.badges.map(b => `<span class="rule-badge ${b.cls}">${b.text}</span>`).join('');
+    wrap.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    g.items.forEach(v => {
+      const d = document.createElement('div');
+      d.className = `card ${g.color}`;
+      const isLong = v.p.length > 2;
+      d.innerHTML =
+        `<div class="pinyin${isLong ? ' sm' : ''}">${v.p}</div>` +
+        `<div class="zh">${v.zh}</div>` +
+        `<div class="thai">${v.th}</div>` +
+        `<div class="play-btn">▶</div>`;
+      d.addEventListener('click', () => playSound(v.zh, d));
+      grid.appendChild(d);
+    });
+    wrap.appendChild(grid);
+
+    const note = document.createElement('div');
+    note.className = `con-note ${g.noteClass}`;
+    note.innerHTML = g.note;
+    wrap.appendChild(note);
+
+    container.appendChild(wrap);
+  });
+}
+buildConsonants();
+
+let activeCard = null;
+
+function playSound(zh, card) {
+  if (!window.speechSynthesis) {
+    document.getElementById('noAudio').style.display = 'block';
+    return;
+  }
+  window.speechSynthesis.cancel();
+  if (activeCard) activeCard.classList.remove('playing');
+
+  const u = new SpeechSynthesisUtterance(zh);
+  u.lang = 'zh-CN';
+  u.rate = 0.75;
+  u.pitch = 1.0;
+
+  const voices = speechSynthesis.getVoices();
+  const zhVoice = voices.find(v => v.lang.startsWith('zh') && v.lang.includes('CN'))
+                || voices.find(v => v.lang.startsWith('zh'));
+  if (zhVoice) u.voice = zhVoice;
+
+  card.classList.add('playing');
+  activeCard = card;
+  u.onend = u.onerror = () => card.classList.remove('playing');
+  speechSynthesis.speak(u);
+}
+
+if (window.speechSynthesis) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+} else {
+  document.getElementById('noAudio').style.display = 'block';
+}
+
+function setTab(el, type) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => {
+    if (type === 'all') {
+      s.classList.toggle('hidden', s.dataset.type === 'consonant' || s.dataset.type === 'example');
+    } else {
+      s.classList.toggle('hidden', s.dataset.type !== type);
+    }
+  });
+}
+</script>
+</body>
+</html>
