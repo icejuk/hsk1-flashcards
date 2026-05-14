@@ -770,36 +770,36 @@ function buildConsonants() {
 buildConsonants();
 
 let activeCard = null;
+let activeAudio = null;
 
 function playSound(zh, card) {
-  if (!window.speechSynthesis) {
-    document.getElementById('noAudio').style.display = 'block';
-    return;
-  }
-  window.speechSynthesis.cancel();
+  if (activeAudio) { activeAudio.pause(); activeAudio = null; }
   if (activeCard) activeCard.classList.remove('playing');
 
-  const u = new SpeechSynthesisUtterance(zh);
-  u.lang = 'zh-CN';
-  u.rate = 0.75;
-  u.pitch = 1.0;
-
-  const voices = speechSynthesis.getVoices();
-  const zhVoice = voices.find(v => v.lang.startsWith('zh') && v.lang.includes('CN'))
-                || voices.find(v => v.lang.startsWith('zh'));
-  if (zhVoice) u.voice = zhVoice;
-
-  card.classList.add('playing');
+  const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(zh)}&tl=zh-CN&client=gtx&ttsspeed=0.7`;
+  const audio = new Audio(url);
+  activeAudio = audio;
   activeCard = card;
-  u.onend = u.onerror = () => card.classList.remove('playing');
-  speechSynthesis.speak(u);
-}
+  card.classList.add('playing');
 
-if (window.speechSynthesis) {
-  speechSynthesis.getVoices();
-  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
-} else {
-  document.getElementById('noAudio').style.display = 'block';
+  audio.onended = audio.onerror = () => {
+    card.classList.remove('playing');
+    if (activeCard === card) { activeCard = null; activeAudio = null; }
+  };
+
+  audio.play().catch(() => {
+    // fallback to Web Speech API
+    card.classList.remove('playing');
+    if (!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(zh);
+    u.lang = 'zh-CN'; u.rate = 0.75;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => v.lang.startsWith('zh') && v.lang.includes('CN')) || voices.find(v => v.lang.startsWith('zh'));
+    if (v) u.voice = v;
+    card.classList.add('playing');
+    u.onend = u.onerror = () => card.classList.remove('playing');
+    speechSynthesis.speak(u);
+  });
 }
 
 function setTab(el, type) {
