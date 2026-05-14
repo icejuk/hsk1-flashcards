@@ -206,6 +206,46 @@
     .ex-th { font-size: 9.5px; color: #777; margin-top: 3px; line-height: 1.2; }
     .ex-play { font-size: 9px; color: #ddd; margin-top: 3px; }
     .ex-card.playing .ex-play { color: #e53935; }
+
+    /* Special cases tab */
+    .sp-section { margin-bottom: 12px; }
+    .sp-header { border-radius: 10px 10px 0 0; padding: 8px 10px 6px; color: white; }
+    .sp-header .sp-rule-title { font-size: 12px; font-weight: 800; }
+    .sp-header .sp-rule-desc  { font-size: 10px; opacity: 0.88; margin-top: 2px; line-height: 1.4; }
+    .sp-body {
+      background: white; border-radius: 0 0 10px 10px;
+      padding: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .sp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .sp-card {
+      border-radius: 8px; padding: 8px 4px 7px;
+      text-align: center; cursor: pointer;
+      border: 1.5px solid #eee; background: #fafafa;
+      transition: transform 0.12s; user-select: none;
+    }
+    .sp-card:active { transform: scale(0.91); }
+    .sp-before { font-size: 9.5px; color: #bbb; text-decoration: line-through; min-height: 13px; line-height: 1; }
+    .sp-arrow  { font-size: 9px; color: #ccc; line-height: 1; }
+    .sp-after  { font-size: 15px; font-weight: 900; line-height: 1; }
+    .sp-zh     { font-size: 17px; color: #333; margin-top: 2px; line-height: 1; }
+    .sp-mean   { font-size: 9.5px; color: #666; margin-top: 3px; line-height: 1.3; }
+    .sp-label  { font-size: 8.5px; color: #aaa; margin-top: 2px; line-height: 1.2; }
+    .sp-play   { font-size: 9px; color: #ddd; margin-top: 3px; }
+    .sp-card.playing .sp-play { color: #888; }
+    .bg-violet    { background: #5e35b1; }
+    .bg-indigo    { background: #3949ab; }
+    .bg-teal2     { background: #00796b; }
+    .bg-brown     { background: #6d4c41; }
+    .bg-pink      { background: #c2185b; }
+    .bg-bluegrey  { background: #455a64; }
+    .bg-deeporange{ background: #bf360c; }
+    .col-violet   { color: #5e35b1; }
+    .col-indigo   { color: #3949ab; }
+    .col-teal2    { color: #00796b; }
+    .col-brown    { color: #6d4c41; }
+    .col-pink     { color: #c2185b; }
+    .col-bluegrey { color: #455a64; }
+    .col-deeporange{ color: #bf360c; }
   </style>
 </head>
 <body>
@@ -222,6 +262,7 @@
   <div class="tab" onclick="setTab(this,'nasal')">สระนาสิก</div>
   <div class="tab" onclick="setTab(this,'consonant')">พยัญชนะ</div>
   <div class="tab" onclick="setTab(this,'example')">ตัวอย่าง</div>
+  <div class="tab" onclick="setTab(this,'special')">กรณีพิเศษ</div>
 </div>
 
 <div class="content">
@@ -249,6 +290,12 @@
       <b>er</b> = มีเสียง ร แทรก &nbsp;|&nbsp;
       <b>eng</b> = เอิ่ง (ลิ้นไม่แตะ)
     </div>
+  </div>
+
+  <!-- กรณีพิเศษ -->
+  <div class="section hidden" data-type="special">
+    <div class="sec-title">กรณีพิเศษ — เสียงที่เปลี่ยนตามบริบท</div>
+    <div id="special-groups"></div>
   </div>
 
   <!-- ตัวอย่าง -->
@@ -424,6 +471,131 @@ const consonantGroups = [
     ]
   },
 ];
+
+const specialData = [
+  {
+    title: '一 (yī) เปลี่ยนเสียงตามพยางค์ถัดไป',
+    desc: 'ปกติออกเสียง yī (เสียง 1) แต่เปลี่ยนตามสิ่งที่ตามมา',
+    bg: 'bg-violet', col: 'col-violet',
+    items: [
+      { before:'yī', after:'yí', zh:'一个', mean:'หนึ่งอัน', label:'ก่อนเสียงที่ 4', play:'一个' },
+      { before:'yī', after:'yì', zh:'一天', mean:'หนึ่งวัน',  label:'ก่อนเสียงที่ 1', play:'一天' },
+      { before:'yī', after:'yì', zh:'一起', mean:'ด้วยกัน',  label:'ก่อนเสียงที่ 2/3', play:'一起' },
+      { before:'',   after:'yī', zh:'第一', mean:'อันดับหนึ่ง', label:'ท้ายคำ = เสียง 1', play:'第一' },
+      { before:'',   after:'yī', zh:'统一', mean:'รวมกัน',   label:'ท้ายคำ = เสียง 1', play:'统一' },
+      { before:'yī', after:'yí', zh:'一样', mean:'เหมือนกัน', label:'ก่อนเสียงที่ 4', play:'一样' },
+    ]
+  },
+  {
+    title: '不 (bù) เปลี่ยนเสียงก่อนเสียงที่ 4',
+    desc: 'ปกติออกเสียง bù (เสียง 4) แต่ถ้าพยางค์ถัดไปเป็นเสียง 4 เปลี่ยนเป็น bú (เสียง 2)',
+    bg: 'bg-indigo', col: 'col-indigo',
+    items: [
+      { before:'bù', after:'bú duì', zh:'不对', mean:'ไม่ถูก',  label:'duì = เสียง 4', play:'不对' },
+      { before:'bù', after:'bú shì', zh:'不是', mean:'ไม่ใช่',  label:'shì = เสียง 4', play:'不是' },
+      { before:'bù', after:'bú yòng', zh:'不用', mean:'ไม่ต้อง', label:'yòng = เสียง 4', play:'不用' },
+      { before:'',   after:'bù hǎo', zh:'不好', mean:'ไม่ดี',   label:'hǎo = เสียง 3 ไม่เปลี่ยน', play:'不好' },
+      { before:'',   after:'bù lái', zh:'不来', mean:'ไม่มา',   label:'lái = เสียง 2 ไม่เปลี่ยน', play:'不来' },
+      { before:'',   after:'bù chī', zh:'不吃', mean:'ไม่กิน',  label:'chī = เสียง 1 ไม่เปลี่ยน', play:'不吃' },
+    ]
+  },
+  {
+    title: 'เสียงที่ 3 + เสียงที่ 3 → เสียงที่ 2 + เสียงที่ 3',
+    desc: 'พยางค์เสียง 3 สองตัวติดกัน ตัวแรกเปลี่ยนเป็นเสียง 2 เพื่อพูดง่ายขึ้น',
+    bg: 'bg-teal2', col: 'col-teal2',
+    items: [
+      { before:'nǐ hǎo', after:'ní hǎo', zh:'你好', mean:'สวัสดี',      label:'3+3 → 2+3', play:'你好' },
+      { before:'kě yǐ',  after:'ké yǐ',  zh:'可以', mean:'ได้/อนุญาต',  label:'3+3 → 2+3', play:'可以' },
+      { before:'wǒ yě',  after:'wó yě',  zh:'我也', mean:'ฉันก็เช่นกัน', label:'3+3 → 2+3', play:'我也' },
+      { before:'lǎo shǔ',after:'láo shǔ',zh:'老鼠', mean:'หนู (สัตว์)', label:'3+3 → 2+3', play:'老鼠' },
+      { before:'měi hǎo',after:'méi hǎo',zh:'美好', mean:'งดงาม',       label:'3+3 → 2+3', play:'美好' },
+      { before:'yǐ wǎng',after:'yí wǎng',zh:'以往', mean:'ในอดีต',      label:'3+3 → 2+3', play:'以往' },
+    ]
+  },
+  {
+    title: 'ü ปลอมตัวเป็น u หลัง j / q / x / y',
+    desc: 'j q x y ตามด้วย ü จะเขียน u แต่ต้องออกเสียง ü (ห่อปาก) เสมอ',
+    bg: 'bg-pink', col: 'col-pink',
+    items: [
+      { before:'jü', after:'ju', zh:'居', mean:'อาศัย',   label:'เขียน ju ออกเสียง jü', play:'居' },
+      { before:'qü', after:'qu', zh:'去', mean:'ไป',       label:'เขียน qu ออกเสียง qü', play:'去' },
+      { before:'xü', after:'xu', zh:'需', mean:'ต้องการ',  label:'เขียน xu ออกเสียง xü', play:'需' },
+      { before:'yü', after:'yu', zh:'鱼', mean:'ปลา',      label:'เขียน yu ออกเสียง yü', play:'鱼' },
+      { before:'nü', after:'nü', zh:'女', mean:'ผู้หญิง',  label:'n,l ยังมีจุด (ไม่เปลี่ยน)', play:'女' },
+      { before:'lü', after:'lü', zh:'旅', mean:'ท่องเที่ยว',label:'n,l ยังมีจุด (ไม่เปลี่ยน)', play:'旅' },
+    ]
+  },
+  {
+    title: 'เสียง i มี 3 แบบ ออกเสียงต่างกัน',
+    desc: 'ตัวอักษร i เดียวกัน แต่เสียงแตกต่างกันตามพยัญชนะนำ',
+    bg: 'bg-brown', col: 'col-brown',
+    items: [
+      { before:'',  after:'bī',  zh:'逼', mean:'บังคับ',  label:'i แท้ = อี (ริมฝีปาก)', play:'逼' },
+      { before:'',  after:'mī',  zh:'咪', mean:'แมว (เสียง)', label:'i แท้ = อี (ริมฝีปาก)', play:'咪' },
+      { before:'',  after:'zhī', zh:'知', mean:'รู้',      label:'i ม้วนลิ้น = เสียงหึ่ง', play:'知' },
+      { before:'',  after:'shī', zh:'师', mean:'อาจารย์', label:'i ม้วนลิ้น = เสียงหึ่ง', play:'师' },
+      { before:'',  after:'zī',  zh:'字', mean:'อักษร',   label:'i ดึงลิ้น = เสียงหึ่ง', play:'字' },
+      { before:'',  after:'sī',  zh:'丝', mean:'ไหม',     label:'i ดึงลิ้น = เสียงหึ่ง', play:'丝' },
+    ]
+  },
+  {
+    title: 'iou / uei / uen ตัดสั้นเมื่อมีพยัญชนะนำ',
+    desc: 'เขียนสั้นลงในพินอิน แต่ยังออกเสียงครบ เสียงกลางจะเบาลง',
+    bg: 'bg-bluegrey', col: 'col-bluegrey',
+    items: [
+      { before:'liou', after:'liú', zh:'六', mean:'หก',       label:'iou → iu (สระกลางเบา)', play:'六' },
+      { before:'niou', after:'niú', zh:'牛', mean:'วัว',       label:'iou → iu', play:'牛' },
+      { before:'duei', after:'duì', zh:'对', mean:'ถูก/คู่',   label:'uei → ui (สระกลางเบา)', play:'对' },
+      { before:'guei', after:'guì', zh:'贵', mean:'แพง',       label:'uei → ui', play:'贵' },
+      { before:'luen', after:'lùn', zh:'论', mean:'กล่าวถึง',  label:'uen → un (สระกลางเบา)', play:'论' },
+      { before:'cuen', after:'cún', zh:'存', mean:'เก็บ/ฝาก',  label:'uen → un', play:'存' },
+    ]
+  },
+  {
+    title: 'สระขึ้นต้นคำเปลี่ยนเป็น y / w',
+    desc: 'สระ i/ü series ที่ไม่มีพยัญชนะนำ จะเติม y หน้า / สระ u series เติม w หน้า',
+    bg: 'bg-deeporange', col: 'col-deeporange',
+    items: [
+      { before:'i',   after:'yi',   zh:'一', mean:'หนึ่ง',      label:'i → yi', play:'一' },
+      { before:'in',  after:'yīn',  zh:'因', mean:'เพราะ',      label:'in → yin', play:'因' },
+      { before:'ing', after:'yīng', zh:'英', mean:'อังกฤษ/ดอกไม้',label:'ing → ying', play:'英' },
+      { before:'u',   after:'wu',   zh:'五', mean:'ห้า',         label:'u → wu', play:'五' },
+      { before:'uan', after:'wān',  zh:'弯', mean:'โค้ง',        label:'uan → wan', play:'弯' },
+      { before:'ü',   after:'yú',   zh:'鱼', mean:'ปลา',         label:'ü → yu', play:'鱼' },
+    ]
+  },
+];
+
+function buildSpecial() {
+  const container = document.getElementById('special-groups');
+  specialData.forEach(g => {
+    const sec = document.createElement('div');
+    sec.className = 'sp-section';
+    sec.innerHTML = `
+      <div class="sp-header ${g.bg}">
+        <div class="sp-rule-title">${g.title}</div>
+        <div class="sp-rule-desc">${g.desc}</div>
+      </div>
+      <div class="sp-body"><div class="sp-grid" id="spg-${g.bg}"></div></div>`;
+    container.appendChild(sec);
+    const grid = sec.querySelector('.sp-grid');
+    g.items.forEach(v => {
+      const d = document.createElement('div');
+      d.className = 'sp-card';
+      d.innerHTML =
+        `<div class="sp-before">${v.before || '　'}</div>` +
+        `<div class="sp-arrow">↓</div>` +
+        `<div class="sp-after ${g.col}">${v.after}</div>` +
+        `<div class="sp-zh">${v.zh}</div>` +
+        `<div class="sp-mean">${v.mean}</div>` +
+        `<div class="sp-label">${v.label}</div>` +
+        `<div class="sp-play">▶</div>`;
+      d.addEventListener('click', () => playSound(v.play, d));
+      grid.appendChild(d);
+    });
+  });
+}
+buildSpecial();
 
 const exampleData = [
   { con:'b',  color:'blue',   th:'บ',  items:[
@@ -635,7 +807,7 @@ function setTab(el, type) {
   el.classList.add('active');
   document.querySelectorAll('.section').forEach(s => {
     if (type === 'all') {
-      s.classList.toggle('hidden', s.dataset.type === 'consonant' || s.dataset.type === 'example');
+      s.classList.toggle('hidden', s.dataset.type === 'consonant' || s.dataset.type === 'example' || s.dataset.type === 'special');
     } else {
       s.classList.toggle('hidden', s.dataset.type !== type);
     }
