@@ -537,79 +537,162 @@ const consonantGroups = [
   },
 ];
 
-const vocabData = [
-  { cat:'พื้นฐาน', color:'#e53935', items:[
-    { zh:'你好',   py:'nǐ hǎo',        th:'สวัสดี' },
-    { zh:'谢谢',   py:'xièxie',        th:'ขอบคุณ' },
-    { zh:'对不起', py:'duìbuqǐ',       th:'ขอโทษ' },
-    { zh:'没关系', py:'méiguānxi',     th:'ไม่เป็นไร' },
-    { zh:'再见',   py:'zàijiàn',       th:'ลาก่อน' },
-    { zh:'请',     py:'qǐng',          th:'กรุณา/เชิญ' },
-    { zh:'好的',   py:'hǎo de',        th:'โอเค/ได้เลย' },
-    { zh:'不',     py:'bù',            th:'ไม่' },
+const SHOW_PER_CAT = 6;
+
+const vocabPool = [
+  { cat:'พื้นฐาน', color:'#e53935', words:[
+    { zh:'你好',   py:'nǐ hǎo',       th:'สวัสดี' },
+    { zh:'谢谢',   py:'xièxie',       th:'ขอบคุณ' },
+    { zh:'对不起', py:'duìbuqǐ',      th:'ขอโทษ' },
+    { zh:'没关系', py:'méiguānxi',    th:'ไม่เป็นไร' },
+    { zh:'再见',   py:'zàijiàn',      th:'ลาก่อน' },
+    { zh:'请',     py:'qǐng',         th:'กรุณา/เชิญ' },
+    { zh:'好的',   py:'hǎo de',       th:'โอเค/ได้เลย' },
+    { zh:'不',     py:'bù',           th:'ไม่' },
+    { zh:'是',     py:'shì',          th:'ใช่/เป็น' },
+    { zh:'对',     py:'duì',          th:'ถูกต้อง' },
+    { zh:'没问题', py:'méi wèntí',    th:'ไม่มีปัญหา' },
+    { zh:'当然',   py:'dāngrán',      th:'แน่นอน' },
+    { zh:'好久不见',py:'hǎo jiǔ bújiàn',th:'ไม่ได้เจอกันนาน' },
+    { zh:'慢走',   py:'màn zǒu',      th:'เดินทางโดยสวัสดิภาพ' },
+    { zh:'辛苦了', py:'xīnkǔ le',     th:'เหนื่อยมากนะ' },
+    { zh:'没事',   py:'méishì',       th:'ไม่เป็นไร/ไม่มีอะไร' },
+    { zh:'随便',   py:'suíbiàn',      th:'ตามใจ/แล้วแต่' },
+    { zh:'加油',   py:'jiāyóu',       th:'สู้ๆ/เชียร์' },
   ]},
-  { cat:'กริยา', color:'#1565c0', items:[
-    { zh:'是',   py:'shì',         th:'เป็น/ใช่' },
-    { zh:'有',   py:'yǒu',         th:'มี' },
-    { zh:'没有', py:'méiyǒu',      th:'ไม่มี' },
-    { zh:'来',   py:'lái',         th:'มา' },
-    { zh:'去',   py:'qù',          th:'ไป' },
-    { zh:'吃',   py:'chī',         th:'กิน' },
-    { zh:'喝',   py:'hē',          th:'ดื่ม' },
-    { zh:'看',   py:'kàn',         th:'ดู/อ่าน' },
-    { zh:'说',   py:'shuō',        th:'พูด' },
-    { zh:'要',   py:'yào',         th:'ต้องการ/จะ' },
-    { zh:'想',   py:'xiǎng',       th:'อยาก/คิด' },
-    { zh:'知道', py:'zhīdào',      th:'รู้' },
-    { zh:'可以', py:'kěyǐ',        th:'ได้/อนุญาต' },
-    { zh:'喜欢', py:'xǐhuān',      th:'ชอบ' },
-    { zh:'学习', py:'xuéxí',       th:'เรียน/ศึกษา' },
+  { cat:'กริยา', color:'#1565c0', words:[
+    { zh:'来',   py:'lái',        th:'มา' },
+    { zh:'去',   py:'qù',         th:'ไป' },
+    { zh:'吃',   py:'chī',        th:'กิน' },
+    { zh:'喝',   py:'hē',         th:'ดื่ม' },
+    { zh:'看',   py:'kàn',        th:'ดู/มอง' },
+    { zh:'说',   py:'shuō',       th:'พูด' },
+    { zh:'要',   py:'yào',        th:'ต้องการ/จะ' },
+    { zh:'想',   py:'xiǎng',      th:'อยาก/คิด' },
+    { zh:'知道', py:'zhīdào',     th:'รู้' },
+    { zh:'可以', py:'kěyǐ',       th:'ได้/อนุญาต' },
+    { zh:'喜欢', py:'xǐhuān',     th:'ชอบ' },
+    { zh:'学习', py:'xuéxí',      th:'เรียน' },
+    { zh:'工作', py:'gōngzuò',    th:'ทำงาน' },
+    { zh:'买',   py:'mǎi',        th:'ซื้อ' },
+    { zh:'卖',   py:'mài',        th:'ขาย' },
+    { zh:'用',   py:'yòng',       th:'ใช้' },
+    { zh:'做',   py:'zuò',        th:'ทำ' },
+    { zh:'给',   py:'gěi',        th:'ให้' },
+    { zh:'走',   py:'zǒu',        th:'เดิน/ไป' },
+    { zh:'跑',   py:'pǎo',        th:'วิ่ง' },
+    { zh:'坐',   py:'zuò',        th:'นั่ง' },
+    { zh:'睡觉', py:'shuìjiào',   th:'นอนหลับ' },
+    { zh:'听',   py:'tīng',       th:'ฟัง' },
+    { zh:'找',   py:'zhǎo',       th:'หา' },
+    { zh:'帮',   py:'bāng',       th:'ช่วย' },
+    { zh:'问',   py:'wèn',        th:'ถาม' },
+    { zh:'回',   py:'huí',        th:'กลับ' },
+    { zh:'叫',   py:'jiào',       th:'เรียก/ชื่อ' },
+    { zh:'觉得', py:'juéde',      th:'รู้สึก/คิดว่า' },
+    { zh:'认识', py:'rènshi',     th:'รู้จัก' },
+    { zh:'等',   py:'děng',       th:'รอ' },
+    { zh:'开始', py:'kāishǐ',     th:'เริ่ม' },
   ]},
-  { cat:'คุณศัพท์', color:'#2e7d32', items:[
-    { zh:'好',   py:'hǎo',     th:'ดี' },
-    { zh:'大',   py:'dà',      th:'ใหญ่' },
-    { zh:'小',   py:'xiǎo',    th:'เล็ก' },
-    { zh:'多',   py:'duō',     th:'มาก' },
-    { zh:'少',   py:'shǎo',    th:'น้อย' },
-    { zh:'贵',   py:'guì',     th:'แพง' },
-    { zh:'便宜', py:'piányí',  th:'ถูก' },
-    { zh:'快',   py:'kuài',    th:'เร็ว' },
+  { cat:'คุณศัพท์', color:'#2e7d32', words:[
+    { zh:'好',   py:'hǎo',       th:'ดี' },
+    { zh:'大',   py:'dà',        th:'ใหญ่' },
+    { zh:'小',   py:'xiǎo',      th:'เล็ก' },
+    { zh:'多',   py:'duō',       th:'มาก' },
+    { zh:'少',   py:'shǎo',      th:'น้อย' },
+    { zh:'贵',   py:'guì',       th:'แพง' },
+    { zh:'便宜', py:'piányí',    th:'ถูก' },
+    { zh:'快',   py:'kuài',      th:'เร็ว' },
+    { zh:'慢',   py:'màn',       th:'ช้า' },
+    { zh:'新',   py:'xīn',       th:'ใหม่' },
+    { zh:'旧',   py:'jiù',       th:'เก่า' },
+    { zh:'热',   py:'rè',        th:'ร้อน' },
+    { zh:'冷',   py:'lěng',      th:'เย็น/หนาว' },
+    { zh:'忙',   py:'máng',      th:'ยุ่ง' },
+    { zh:'累',   py:'lèi',       th:'เหนื่อย' },
+    { zh:'饿',   py:'è',         th:'หิว' },
+    { zh:'高兴', py:'gāoxìng',   th:'ดีใจ' },
+    { zh:'难过', py:'nánguò',    th:'เศร้า' },
+    { zh:'漂亮', py:'piàoliang', th:'สวย' },
+    { zh:'难',   py:'nán',       th:'ยาก' },
+    { zh:'容易', py:'róngyì',    th:'ง่าย' },
+    { zh:'有趣', py:'yǒuqù',     th:'น่าสนใจ' },
+    { zh:'重要', py:'zhòngyào',  th:'สำคัญ' },
   ]},
-  { cat:'คำถาม', color:'#e65100', items:[
+  { cat:'คำถาม', color:'#e65100', words:[
     { zh:'什么',     py:'shénme',        th:'อะไร' },
     { zh:'哪里',     py:'nǎlǐ',          th:'ที่ไหน' },
     { zh:'谁',       py:'shéi',          th:'ใคร' },
     { zh:'为什么',   py:'wèishénme',     th:'ทำไม' },
     { zh:'怎么',     py:'zěnme',         th:'อย่างไร' },
     { zh:'多少',     py:'duōshao',       th:'เท่าไหร่' },
-    { zh:'几',       py:'jǐ',            th:'กี่ (น้อยกว่า 10)' },
+    { zh:'几',       py:'jǐ',            th:'กี่' },
     { zh:'什么时候', py:'shénme shíhòu', th:'เมื่อไหร่' },
+    { zh:'哪个',     py:'nǎge',          th:'อันไหน' },
+    { zh:'怎么样',   py:'zěnmeyàng',     th:'เป็นยังไงบ้าง' },
+    { zh:'多久',     py:'duō jiǔ',       th:'นานแค่ไหน' },
+    { zh:'多远',     py:'duō yuǎn',      th:'ไกลแค่ไหน' },
   ]},
-  { cat:'เวลา', color:'#7b1fa2', items:[
-    { zh:'今天', py:'jīntiān',   th:'วันนี้' },
-    { zh:'明天', py:'míngtiān',  th:'พรุ่งนี้' },
-    { zh:'昨天', py:'zuótiān',   th:'เมื่อวาน' },
-    { zh:'现在', py:'xiànzài',   th:'ตอนนี้' },
-    { zh:'早上', py:'zǎoshang',  th:'ตอนเช้า' },
-    { zh:'晚上', py:'wǎnshang',  th:'ตอนเย็น/คืน' },
-    { zh:'时候', py:'shíhòu',    th:'เวลา/ตอนที่' },
+  { cat:'เวลา', color:'#7b1fa2', words:[
+    { zh:'今天',  py:'jīntiān',    th:'วันนี้' },
+    { zh:'明天',  py:'míngtiān',   th:'พรุ่งนี้' },
+    { zh:'昨天',  py:'zuótiān',    th:'เมื่อวาน' },
+    { zh:'现在',  py:'xiànzài',    th:'ตอนนี้' },
+    { zh:'早上',  py:'zǎoshang',   th:'ตอนเช้า' },
+    { zh:'晚上',  py:'wǎnshang',   th:'ตอนเย็น/คืน' },
+    { zh:'下午',  py:'xiàwǔ',      th:'บ่าย' },
+    { zh:'中午',  py:'zhōngwǔ',    th:'เที่ยง' },
+    { zh:'以前',  py:'yǐqián',     th:'ก่อนหน้า/ในอดีต' },
+    { zh:'以后',  py:'yǐhòu',      th:'หลังจากนี้/อนาคต' },
+    { zh:'周末',  py:'zhōumò',     th:'วันหยุดสุดสัปดาห์' },
+    { zh:'星期一',py:'xīngqīyī',   th:'วันจันทร์' },
+    { zh:'星期三',py:'xīngqīsān',  th:'วันพุธ' },
+    { zh:'星期五',py:'xīngqīwǔ',   th:'วันศุกร์' },
+    { zh:'小时',  py:'xiǎoshí',    th:'ชั่วโมง' },
+    { zh:'分钟',  py:'fēnzhōng',   th:'นาที' },
+    { zh:'最近',  py:'zuìjìn',     th:'เร็วๆ นี้/ช่วงนี้' },
   ]},
-  { cat:'คำนาม', color:'#00695c', items:[
-    { zh:'人',   py:'rén',      th:'คน' },
-    { zh:'朋友', py:'péngyou',  th:'เพื่อน' },
-    { zh:'钱',   py:'qián',     th:'เงิน' },
-    { zh:'水',   py:'shuǐ',     th:'น้ำ' },
-    { zh:'饭',   py:'fàn',      th:'ข้าว/อาหาร' },
-    { zh:'手机', py:'shǒujī',   th:'โทรศัพท์' },
-    { zh:'中文', py:'Zhōngwén', th:'ภาษาจีน' },
+  { cat:'คำนาม', color:'#00695c', words:[
+    { zh:'人',   py:'rén',       th:'คน' },
+    { zh:'朋友', py:'péngyou',   th:'เพื่อน' },
+    { zh:'钱',   py:'qián',      th:'เงิน' },
+    { zh:'水',   py:'shuǐ',      th:'น้ำ' },
+    { zh:'饭',   py:'fàn',       th:'ข้าว/อาหาร' },
+    { zh:'手机', py:'shǒujī',    th:'โทรศัพท์' },
+    { zh:'中文', py:'Zhōngwén',  th:'ภาษาจีน' },
+    { zh:'家',   py:'jiā',       th:'บ้าน/ครอบครัว' },
+    { zh:'学校', py:'xuéxiào',   th:'โรงเรียน' },
+    { zh:'书',   py:'shū',       th:'หนังสือ' },
+    { zh:'车',   py:'chē',       th:'รถ' },
+    { zh:'时间', py:'shíjiān',   th:'เวลา' },
+    { zh:'问题', py:'wèntí',     th:'ปัญหา/คำถาม' },
+    { zh:'东西', py:'dōngxi',    th:'ของ/สิ่งของ' },
+    { zh:'名字', py:'míngzi',    th:'ชื่อ' },
+    { zh:'地方', py:'dìfāng',    th:'สถานที่' },
+    { zh:'老师', py:'lǎoshī',    th:'ครู/อาจารย์' },
+    { zh:'学生', py:'xuéshēng',  th:'นักเรียน' },
+    { zh:'妈妈', py:'māma',      th:'แม่' },
+    { zh:'爸爸', py:'bàba',      th:'พ่อ' },
+    { zh:'天气', py:'tiānqì',    th:'สภาพอากาศ' },
+    { zh:'电脑', py:'diànnǎo',   th:'คอมพิวเตอร์' },
+    { zh:'咖啡', py:'kāfēi',     th:'กาแฟ' },
+    { zh:'医院', py:'yīyuàn',    th:'โรงพยาบาล' },
   ]},
 ];
+
+function pickRandom(arr, n) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, Math.min(n, copy.length));
+}
 
 function buildVocab() {
   const filterEl = document.getElementById('voc-filter');
   const container = document.getElementById('vocab-groups');
 
-  // filter pills
   const allPill = document.createElement('div');
   allPill.className = 'voc-pill active';
   allPill.textContent = 'ทั้งหมด';
@@ -618,7 +701,7 @@ function buildVocab() {
   allPill.onclick = () => filterVoc('ทั้งหมด', allPill);
   filterEl.appendChild(allPill);
 
-  vocabData.forEach(g => {
+  vocabPool.forEach(g => {
     const pill = document.createElement('div');
     pill.className = 'voc-pill';
     pill.textContent = g.cat;
@@ -631,21 +714,11 @@ function buildVocab() {
     const sec = document.createElement('div');
     sec.className = 'voc-group';
     sec.dataset.cat = g.cat;
-    sec.innerHTML = `<div class="voc-group-title" style="color:${g.color}">${g.cat}</div>`;
+    sec.innerHTML = `<div class="voc-group-title" style="color:${g.color}">${g.cat} <span style="font-weight:400;color:#bbb">(${g.words.length} คำ)</span></div>`;
     const grid = document.createElement('div');
     grid.className = 'voc-grid';
-    g.items.forEach(v => {
-      const d = document.createElement('div');
-      d.className = 'voc-card';
-      d.style.color = g.color;
-      d.innerHTML =
-        `<div class="voc-zh">${v.zh}</div>` +
-        `<div class="voc-py">${v.py}</div>` +
-        `<div class="voc-th">${v.th}</div>` +
-        `<div class="voc-play">▶</div>`;
-      d.addEventListener('click', () => playSound(v.zh, d));
-      grid.appendChild(d);
-    });
+    grid.id = 'vg-' + g.cat;
+    renderVocabGrid(grid, pickRandom(g.words, SHOW_PER_CAT), g.color);
     sec.appendChild(grid);
     container.appendChild(sec);
   });
@@ -666,14 +739,26 @@ function filterVoc(cat, clickedPill) {
   });
 }
 
+function renderVocabGrid(grid, items, color) {
+  grid.innerHTML = '';
+  items.forEach(v => {
+    const d = document.createElement('div');
+    d.className = 'voc-card';
+    d.style.color = color;
+    d.innerHTML =
+      `<div class="voc-zh">${v.zh}</div>` +
+      `<div class="voc-py">${v.py}</div>` +
+      `<div class="voc-th">${v.th}</div>` +
+      `<div class="voc-play">▶</div>`;
+    d.addEventListener('click', () => playSound(v.zh, d));
+    grid.appendChild(d);
+  });
+}
+
 function shuffleVocab() {
-  document.querySelectorAll('.voc-grid').forEach(grid => {
-    const cards = [...grid.children];
-    for (let i = cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      grid.appendChild(cards[j]);
-      cards.splice(j, 1);
-    }
+  vocabPool.forEach(g => {
+    const grid = document.getElementById('vg-' + g.cat);
+    if (grid) renderVocabGrid(grid, pickRandom(g.words, SHOW_PER_CAT), g.color);
   });
 }
 
