@@ -246,6 +246,41 @@
     .col-pink     { color: #c2185b; }
     .col-bluegrey { color: #455a64; }
     .col-deeporange{ color: #bf360c; }
+
+    /* Vocab tab */
+    .voc-filter {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      padding: 4px 0 8px;
+    }
+    .voc-pill {
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 10.5px; font-weight: 700; cursor: pointer;
+      border: 1.5px solid transparent; user-select: none;
+      transition: all 0.15s;
+    }
+    .voc-pill.active { color: white; }
+    .voc-group { margin-bottom: 10px; }
+    .voc-group.hidden { display: none; }
+    .voc-group-title {
+      font-size: 10px; font-weight: 800; color: #888;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 4px 2px 5px;
+    }
+    .voc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .voc-card {
+      background: white; border-radius: 10px;
+      padding: 9px 5px 7px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      cursor: pointer; border: 1.5px solid transparent;
+      transition: transform 0.12s; user-select: none;
+    }
+    .voc-card:active { transform: scale(0.91); }
+    .voc-card.playing { border-color: currentColor; opacity: 0.85; }
+    .voc-zh   { font-size: 20px; font-weight: 800; color: #222; line-height: 1; }
+    .voc-py   { font-size: 10px; color: #888; margin-top: 3px; line-height: 1.3; }
+    .voc-th   { font-size: 10.5px; color: #444; margin-top: 3px; font-weight: 600; line-height: 1.3; }
+    .voc-play { font-size: 9px; color: #ddd; margin-top: 4px; }
+    .voc-card.playing .voc-play { color: #888; }
   </style>
 </head>
 <body>
@@ -263,6 +298,7 @@
   <div class="tab" onclick="setTab(this,'consonant')">พยัญชนะ</div>
   <div class="tab" onclick="setTab(this,'example')">ตัวอย่าง</div>
   <div class="tab" onclick="setTab(this,'special')">กรณีพิเศษ</div>
+  <div class="tab" onclick="setTab(this,'vocab')">คำศัพท์</div>
 </div>
 
 <div class="content">
@@ -290,6 +326,13 @@
       <b>er</b> = มีเสียง ร แทรก &nbsp;|&nbsp;
       <b>eng</b> = เอิ่ง (ลิ้นไม่แตะ)
     </div>
+  </div>
+
+  <!-- คำศัพท์ -->
+  <div class="section hidden" data-type="vocab">
+    <div class="sec-title">คำศัพท์พื้นฐาน 50 คำ</div>
+    <div class="voc-filter" id="voc-filter"></div>
+    <div id="vocab-groups"></div>
   </div>
 
   <!-- กรณีพิเศษ -->
@@ -471,6 +514,137 @@ const consonantGroups = [
     ]
   },
 ];
+
+const vocabData = [
+  { cat:'พื้นฐาน', color:'#e53935', items:[
+    { zh:'你好',   py:'nǐ hǎo',        th:'สวัสดี' },
+    { zh:'谢谢',   py:'xièxie',        th:'ขอบคุณ' },
+    { zh:'对不起', py:'duìbuqǐ',       th:'ขอโทษ' },
+    { zh:'没关系', py:'méiguānxi',     th:'ไม่เป็นไร' },
+    { zh:'再见',   py:'zàijiàn',       th:'ลาก่อน' },
+    { zh:'请',     py:'qǐng',          th:'กรุณา/เชิญ' },
+    { zh:'好的',   py:'hǎo de',        th:'โอเค/ได้เลย' },
+    { zh:'不',     py:'bù',            th:'ไม่' },
+  ]},
+  { cat:'กริยา', color:'#1565c0', items:[
+    { zh:'是',   py:'shì',         th:'เป็น/ใช่' },
+    { zh:'有',   py:'yǒu',         th:'มี' },
+    { zh:'没有', py:'méiyǒu',      th:'ไม่มี' },
+    { zh:'来',   py:'lái',         th:'มา' },
+    { zh:'去',   py:'qù',          th:'ไป' },
+    { zh:'吃',   py:'chī',         th:'กิน' },
+    { zh:'喝',   py:'hē',          th:'ดื่ม' },
+    { zh:'看',   py:'kàn',         th:'ดู/อ่าน' },
+    { zh:'说',   py:'shuō',        th:'พูด' },
+    { zh:'要',   py:'yào',         th:'ต้องการ/จะ' },
+    { zh:'想',   py:'xiǎng',       th:'อยาก/คิด' },
+    { zh:'知道', py:'zhīdào',      th:'รู้' },
+    { zh:'可以', py:'kěyǐ',        th:'ได้/อนุญาต' },
+    { zh:'喜欢', py:'xǐhuān',      th:'ชอบ' },
+    { zh:'学习', py:'xuéxí',       th:'เรียน/ศึกษา' },
+  ]},
+  { cat:'คุณศัพท์', color:'#2e7d32', items:[
+    { zh:'好',   py:'hǎo',     th:'ดี' },
+    { zh:'大',   py:'dà',      th:'ใหญ่' },
+    { zh:'小',   py:'xiǎo',    th:'เล็ก' },
+    { zh:'多',   py:'duō',     th:'มาก' },
+    { zh:'少',   py:'shǎo',    th:'น้อย' },
+    { zh:'贵',   py:'guì',     th:'แพง' },
+    { zh:'便宜', py:'piányí',  th:'ถูก' },
+    { zh:'快',   py:'kuài',    th:'เร็ว' },
+  ]},
+  { cat:'คำถาม', color:'#e65100', items:[
+    { zh:'什么',     py:'shénme',        th:'อะไร' },
+    { zh:'哪里',     py:'nǎlǐ',          th:'ที่ไหน' },
+    { zh:'谁',       py:'shéi',          th:'ใคร' },
+    { zh:'为什么',   py:'wèishénme',     th:'ทำไม' },
+    { zh:'怎么',     py:'zěnme',         th:'อย่างไร' },
+    { zh:'多少',     py:'duōshao',       th:'เท่าไหร่' },
+    { zh:'几',       py:'jǐ',            th:'กี่ (น้อยกว่า 10)' },
+    { zh:'什么时候', py:'shénme shíhòu', th:'เมื่อไหร่' },
+  ]},
+  { cat:'เวลา', color:'#7b1fa2', items:[
+    { zh:'今天', py:'jīntiān',   th:'วันนี้' },
+    { zh:'明天', py:'míngtiān',  th:'พรุ่งนี้' },
+    { zh:'昨天', py:'zuótiān',   th:'เมื่อวาน' },
+    { zh:'现在', py:'xiànzài',   th:'ตอนนี้' },
+    { zh:'早上', py:'zǎoshang',  th:'ตอนเช้า' },
+    { zh:'晚上', py:'wǎnshang',  th:'ตอนเย็น/คืน' },
+    { zh:'时候', py:'shíhòu',    th:'เวลา/ตอนที่' },
+  ]},
+  { cat:'คำนาม', color:'#00695c', items:[
+    { zh:'人',   py:'rén',      th:'คน' },
+    { zh:'朋友', py:'péngyou',  th:'เพื่อน' },
+    { zh:'钱',   py:'qián',     th:'เงิน' },
+    { zh:'水',   py:'shuǐ',     th:'น้ำ' },
+    { zh:'饭',   py:'fàn',      th:'ข้าว/อาหาร' },
+    { zh:'手机', py:'shǒujī',   th:'โทรศัพท์' },
+    { zh:'中文', py:'Zhōngwén', th:'ภาษาจีน' },
+  ]},
+];
+
+function buildVocab() {
+  const filterEl = document.getElementById('voc-filter');
+  const container = document.getElementById('vocab-groups');
+
+  // filter pills
+  const allPill = document.createElement('div');
+  allPill.className = 'voc-pill active';
+  allPill.textContent = 'ทั้งหมด';
+  allPill.style.background = '#e53935';
+  allPill.style.color = 'white';
+  allPill.onclick = () => filterVoc('ทั้งหมด', allPill);
+  filterEl.appendChild(allPill);
+
+  vocabData.forEach(g => {
+    const pill = document.createElement('div');
+    pill.className = 'voc-pill';
+    pill.textContent = g.cat;
+    pill.style.borderColor = g.color;
+    pill.style.color = g.color;
+    pill.dataset.activeColor = g.color;
+    pill.onclick = () => filterVoc(g.cat, pill);
+    filterEl.appendChild(pill);
+
+    const sec = document.createElement('div');
+    sec.className = 'voc-group';
+    sec.dataset.cat = g.cat;
+    sec.innerHTML = `<div class="voc-group-title" style="color:${g.color}">${g.cat}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'voc-grid';
+    g.items.forEach(v => {
+      const d = document.createElement('div');
+      d.className = 'voc-card';
+      d.style.color = g.color;
+      d.innerHTML =
+        `<div class="voc-zh">${v.zh}</div>` +
+        `<div class="voc-py">${v.py}</div>` +
+        `<div class="voc-th">${v.th}</div>` +
+        `<div class="voc-play">▶</div>`;
+      d.addEventListener('click', () => playSound(v.zh, d));
+      grid.appendChild(d);
+    });
+    sec.appendChild(grid);
+    container.appendChild(sec);
+  });
+}
+
+function filterVoc(cat, clickedPill) {
+  document.querySelectorAll('.voc-pill').forEach(p => {
+    p.classList.remove('active');
+    p.style.background = '';
+    p.style.color = p.dataset.activeColor || '#e53935';
+  });
+  clickedPill.classList.add('active');
+  clickedPill.style.background = clickedPill.dataset.activeColor || '#e53935';
+  clickedPill.style.color = 'white';
+
+  document.querySelectorAll('.voc-group').forEach(g => {
+    g.classList.toggle('hidden', cat !== 'ทั้งหมด' && g.dataset.cat !== cat);
+  });
+}
+
+buildVocab();
 
 const specialData = [
   {
@@ -807,7 +981,7 @@ function setTab(el, type) {
   el.classList.add('active');
   document.querySelectorAll('.section').forEach(s => {
     if (type === 'all') {
-      s.classList.toggle('hidden', s.dataset.type === 'consonant' || s.dataset.type === 'example' || s.dataset.type === 'special');
+      s.classList.toggle('hidden', s.dataset.type === 'consonant' || s.dataset.type === 'example' || s.dataset.type === 'special' || s.dataset.type === 'vocab');
     } else {
       s.classList.toggle('hidden', s.dataset.type !== type);
     }
