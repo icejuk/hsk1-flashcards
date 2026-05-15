@@ -257,10 +257,20 @@
     .col-deeporange{ color: #bf360c; }
 
     /* Vocab tab */
-    .voc-filter {
-      display: flex; flex-wrap: wrap; gap: 5px;
+    .voc-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
       padding: 4px 0 8px;
     }
+    .voc-filter {
+      display: flex; flex-wrap: wrap; gap: 5px; flex: 1;
+    }
+    .voc-shuffle {
+      flex-shrink: 0; margin-left: 8px;
+      background: #f2f2f7; border: none; border-radius: 8px;
+      padding: 5px 10px; font-size: 14px; cursor: pointer;
+      user-select: none; transition: transform 0.15s;
+    }
+    .voc-shuffle:active { transform: rotate(180deg) scale(0.9); }
     .voc-pill {
       padding: 4px 10px; border-radius: 99px;
       font-size: 10.5px; font-weight: 700; cursor: pointer;
@@ -340,7 +350,10 @@
   <!-- คำศัพท์ -->
   <div class="section hidden" data-type="vocab">
     <div class="sec-title">คำศัพท์พื้นฐาน 50 คำ</div>
-    <div class="voc-filter" id="voc-filter"></div>
+    <div class="voc-toolbar">
+      <div class="voc-filter" id="voc-filter"></div>
+      <button class="voc-shuffle" onclick="shuffleVocab()" title="สุ่มลำดับ">🔀</button>
+    </div>
     <div id="vocab-groups"></div>
   </div>
 
@@ -650,6 +663,17 @@ function filterVoc(cat, clickedPill) {
 
   document.querySelectorAll('.voc-group').forEach(g => {
     g.classList.toggle('hidden', cat !== 'ทั้งหมด' && g.dataset.cat !== cat);
+  });
+}
+
+function shuffleVocab() {
+  document.querySelectorAll('.voc-grid').forEach(grid => {
+    const cards = [...grid.children];
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      grid.appendChild(cards[j]);
+      cards.splice(j, 1);
+    }
   });
 }
 
