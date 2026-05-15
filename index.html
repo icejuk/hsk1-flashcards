@@ -295,8 +295,9 @@
     }
     .voc-card:active { transform: scale(0.91); }
     .voc-card.playing { border-color: currentColor; opacity: 0.85; }
-    .voc-zh   { font-size: 20px; font-weight: 800; color: #222; line-height: 1; }
-    .voc-py   { font-size: 10px; color: #888; margin-top: 3px; line-height: 1.3; }
+    .voc-en   { font-size: 11px; color: #999; font-weight: 600; line-height: 1.2; min-height: 13px; }
+    .voc-zh   { font-size: 22px; font-weight: 800; color: #222; line-height: 1; margin-top: 4px; }
+    .voc-py   { font-size: 10px; color: #c62828; margin-top: 3px; line-height: 1.3; font-weight: 600; }
     .voc-th   { font-size: 10.5px; color: #444; margin-top: 3px; font-weight: 600; line-height: 1.3; }
     .voc-play { font-size: 9px; color: #ddd; margin-top: 4px; }
     .voc-card.playing .voc-play { color: #888; }
@@ -537,52 +538,47 @@ const consonantGroups = [
   },
 ];
 
-const SHOW_COUNT = 30;
-let vocabCache = null;
+const SHOW_COUNT = 50;
 
-const VOCAB_SOURCES = [
-  {
-    url: 'https://cdn.jsdelivr.net/gh/kerrickstaley/chinese-vocab-list@master/chinese_vocab_list.json',
-    parse: data => Array.isArray(data) ? data
-      .filter(w => (w.simp || w.trad) && w.pinyin && w.defs)
-      .map(w => ({
-        zh: w.simp || w.trad,
-        py: Array.isArray(w.pinyin) ? w.pinyin[0] : w.pinyin,
-        th: Array.isArray(w.defs) ? w.defs.slice(0, 2).join('; ') : String(w.defs)
-      })) : null
-  },
-  {
-    url: 'https://cdn.jsdelivr.net/gh/dragonmanifest/hsk-vocabulary@master/HSK_1.json',
-    parse: data => Array.isArray(data) ? data.map(w => ({
-      zh: w.hanzi || w.simplified || w.simp,
-      py: w.pinyin,
-      th: w.english || w.translations || w.meaning || ''
-    })).filter(w => w.zh && w.py) : null
+async function fetchEnglishWords(n) {
+  const url = 'https://cdn.jsdelivr.net/gh/first20hours/google-10000-english@master/google-10000-english-no-swears.txt';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Wordlist fetch failed');
+  const text = await res.text();
+  // เอาแค่ 2000 คำที่พบบ่อยสุด ความยาว 3-7 ตัว (เด็กอ่านง่าย)
+  const pool = text.split('\n')
+    .map(w => w.trim())
+    .filter(w => w.length >= 3 && w.length <= 7)
+    .slice(0, 2000);
+  // สุ่มเลือก n คำแบบไม่ซ้ำ
+  const picked = new Set();
+  while (picked.size < n && picked.size < pool.length) {
+    picked.add(pool[Math.floor(Math.random() * pool.length)]);
   }
-];
-
-async function fetchVocab() {
-  for (const src of VOCAB_SOURCES) {
-    try {
-      const res = await fetch(src.url);
-      if (!res.ok) continue;
-      const data = await res.json();
-      const parsed = src.parse(data);
-      if (parsed && parsed.length > 0) return { words: parsed, source: src.url };
-    } catch (e) { console.warn('source failed:', src.url, e); }
-  }
-  return null;
+  return [...picked];
 }
 
-
-function pickN(arr, n) {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy.slice(0, Math.min(n, copy.length));
+async function gtranslate(text, tl, withRomanization = false) {
+  const dt = withRomanization ? 'dt=t&dt=rm' : 'dt=t';
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${tl}&${dt}&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('translate failed');
+  const data = await res.json();
+  const tx  = (data[0] || []).map(c => c[0]).filter(Boolean).join('');
+  const rom = (data[0] || []).map(c => c[2]).filter(Boolean).join(' ');
+  return { tx, rom };
 }
+
+async function buildOneCard(en) {
+  try {
+    const [zh, th] = await Promise.all([
+      gtranslate(en, 'zh-CN', true),
+      gtranslate(en, 'th',    false)
+    ]);
+    return { en, zh: zh.tx, py: zh.rom, th: th.tx };
+  } catch { return null; }
+}
+
 
 function renderVocabGrid(grid, items) {
   grid.innerHTML = '';
@@ -591,9 +587,10 @@ function renderVocabGrid(grid, items) {
     d.className = 'voc-card';
     d.style.color = '#1565c0';
     d.innerHTML =
+      `<div class="voc-en">${v.en}</div>` +
       `<div class="voc-zh">${v.zh}</div>` +
-      `<div class="voc-py">${v.py}</div>` +
-      `<div class="voc-th" style="font-weight:400">${v.th}</div>` +
+      `<div class="voc-py">${v.py || '-'}</div>` +
+      `<div class="voc-th">${v.th}</div>` +
       `<div class="voc-play">▶</div>`;
     d.addEventListener('click', () => playSound(v.zh, d));
     grid.appendChild(d);
@@ -604,33 +601,34 @@ async function buildVocab() {
   const status = document.getElementById('voc-status');
   const container = document.getElementById('vocab-groups');
   container.innerHTML = '';
+  status.style.color = '#666';
+  status.textContent = '⏳ กำลังดึงคำอังกฤษ + แปลเป็นจีน/ไทย...';
 
-  if (!vocabCache) {
-    status.textContent = '⏳ กำลังโหลดคำศัพท์จาก API...';
-    const result = await fetchVocab();
-    if (!result) {
-      status.textContent = '❌ โหลดไม่สำเร็จ ลองใหม่อีกครั้ง';
+  try {
+    const englishWords = await fetchEnglishWords(SHOW_COUNT);
+    const cards = (await Promise.all(englishWords.map(buildOneCard))).filter(Boolean);
+
+    if (cards.length === 0) {
+      status.textContent = '❌ แปลไม่สำเร็จ ลองกด 🔀 ใหม่';
       status.style.color = '#c62828';
       return;
     }
-    vocabCache = result.words;
+
+    status.innerHTML = `✅ ${cards.length} คำใหม่ · กด 🔀 สุ่มชุดใหม่<br><span style="font-size:9px;color:#999">EN→ZH→TH ผ่าน Google Translate</span>`;
+    status.style.color = '#2e7d32';
+
+    const grid = document.createElement('div');
+    grid.className = 'voc-grid';
+    grid.id = 'vg-main';
+    renderVocabGrid(grid, cards);
+    container.appendChild(grid);
+  } catch (e) {
+    status.textContent = '❌ โหลดไม่สำเร็จ: ' + e.message;
+    status.style.color = '#c62828';
   }
-
-  status.innerHTML = `✅ ${vocabCache.length} คำในคลัง · กด 🔀 สุ่มชุดใหม่ <br><span style="font-size:9px;color:#999">ความหมาย: ภาษาอังกฤษ (จาก CC-CEDICT)</span>`;
-  status.style.color = '#2e7d32';
-
-  const grid = document.createElement('div');
-  grid.className = 'voc-grid';
-  grid.id = 'vg-main';
-  renderVocabGrid(grid, pickN(vocabCache, SHOW_COUNT));
-  container.appendChild(grid);
 }
 
-function shuffleVocab() {
-  if (!vocabCache) { buildVocab(); return; }
-  const grid = document.getElementById('vg-main');
-  if (grid) renderVocabGrid(grid, pickN(vocabCache, SHOW_COUNT));
-}
+function shuffleVocab() { buildVocab(); }
 
 let vocabBuilt = false;
 function ensureVocabBuilt() {
