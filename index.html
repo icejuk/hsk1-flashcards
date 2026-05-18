@@ -297,8 +297,8 @@
     .voc-card.playing { border-color: currentColor; opacity: 0.85; }
     .voc-en   { font-size: 11px; color: #999; font-weight: 600; line-height: 1.2; min-height: 13px; }
     .voc-zh   { font-size: 22px; font-weight: 800; color: #222; line-height: 1; margin-top: 4px; }
-    .voc-py   { font-size: 10px; color: #c62828; margin-top: 3px; line-height: 1.3; font-weight: 600; }
-    .voc-th   { font-size: 10.5px; color: #444; margin-top: 3px; font-weight: 600; line-height: 1.3; }
+    .voc-py   { font-size: 13px; color: #c62828; margin-top: 3px; line-height: 1.3; font-weight: 600; }
+    .voc-th   { font-size: 13px; color: #444; margin-top: 3px; font-weight: 600; line-height: 1.3; }
     .voc-play { font-size: 9px; color: #ddd; margin-top: 4px; }
     .voc-card.playing .voc-play { color: #888; }
 
@@ -1227,24 +1227,27 @@ const lsnVocab = [
 ];
 
 const lsnPhrases = [
-  { zh:'你好', py:'nǐ hǎo',  th:'สวัสดี' },
-  { zh:'不好', py:'bù hǎo',  th:'ไม่ดี' },
-  { zh:'好大', py:'hǎo dà',  th:'ใหญ่มาก' },
-  { zh:'不大', py:'bù dà',   th:'ไม่ใหญ่' },
-  { zh:'大口', py:'dà kǒu',  th:'ปากใหญ่' },
-  { zh:'白马', py:'bái mǎ',  th:'ม้าขาว' },
-  { zh:'好白', py:'hǎo bái', th:'ขาวมาก' },
-  { zh:'五口', py:'wǔ kǒu',  th:'ห้าคน (ในบ้าน)' },
-  { zh:'一口', py:'yī kǒu',  th:'หนึ่งคำ' },
-  { zh:'不一', py:'bù yī',   th:'ไม่เหมือนกัน' },
-  { zh:'女马', py:'nǚ mǎ',   th:'ม้าตัวเมีย' },
-  { zh:'大女', py:'dà nǚ',   th:'ลูกสาวคนโต' },
+  { zh:'你好', py:'nǐ hǎo',  th:'สวัสดี',         en:'hello' },
+  { zh:'不好', py:'bù hǎo',  th:'ไม่ดี',           en:'not good' },
+  { zh:'好大', py:'hǎo dà',  th:'ใหญ่มาก',         en:'very big' },
+  { zh:'不大', py:'bù dà',   th:'ไม่ใหญ่',         en:'not big' },
+  { zh:'大口', py:'dà kǒu',  th:'ปากใหญ่',         en:'big mouth' },
+  { zh:'白马', py:'bái mǎ',  th:'ม้าขาว',          en:'white horse' },
+  { zh:'好白', py:'hǎo bái', th:'ขาวมาก',          en:'very white' },
+  { zh:'五口', py:'wǔ kǒu',  th:'ห้าคน (ในบ้าน)', en:'five members' },
+  { zh:'一口', py:'yī kǒu',  th:'หนึ่งคำ',         en:'one bite' },
+  { zh:'不一', py:'bù yī',   th:'ไม่เหมือนกัน',    en:'not the same' },
+  { zh:'女马', py:'nǚ mǎ',   th:'ม้าตัวเมีย',      en:'female horse' },
+  { zh:'大女', py:'dà nǚ',   th:'ลูกสาวคนโต',      en:'eldest daughter' },
 ];
+
+// Combined deck for flashcard (vocab + phrases)
+let lsnFcDeck = [...lsnVocab, ...lsnPhrases];
 
 function lsnBuildPhrases() {
   const grid = document.getElementById('lsn-pgrid');
   if (grid.children.length) return;
-  lsnPhrases.forEach(p => {
+  lsnShuffle(lsnPhrases).forEach(p => {
     const d = document.createElement('div');
     d.className = 'phrase-card';
     d.innerHTML =
@@ -1279,7 +1282,7 @@ function lsnMode(el, mode) {
 function lsnBuildGrid() {
   const grid = document.getElementById('lsn-vgrid');
   if (grid.children.length) return;
-  lsnVocab.forEach(v => {
+  lsnShuffle(lsnVocab).forEach(v => {
     const d = document.createElement('div');
     d.className = 'voc-card';
     d.style.color = '#c62828';
@@ -1293,29 +1296,58 @@ function lsnBuildGrid() {
   });
 }
 
-// Mode 2: flashcard
+// Mode 2: flashcard (vocab + phrases combined)
 let lsnFcIdx = 0;
 function lsnFcLoad() {
-  const v = lsnVocab[lsnFcIdx];
+  const v = lsnFcDeck[lsnFcIdx];
   document.getElementById('lsn-fc-th-front').textContent = v.th;
-  document.getElementById('lsn-fc-en-front').textContent = v.en;
+  document.getElementById('lsn-fc-en-front').textContent = v.en || '';
   document.getElementById('lsn-fc-py').textContent = v.py;
   document.getElementById('lsn-fc-zh').textContent = v.zh;
-  document.getElementById('lsn-fc-count').textContent = `${lsnFcIdx+1} / ${lsnVocab.length}`;
-  document.getElementById('lsn-fc-bar').style.width = ((lsnFcIdx+1)/lsnVocab.length*100)+'%';
+  document.getElementById('lsn-fc-count').textContent = `${lsnFcIdx+1} / ${lsnFcDeck.length}`;
+  document.getElementById('lsn-fc-bar').style.width = ((lsnFcIdx+1)/lsnFcDeck.length*100)+'%';
   document.getElementById('lsn-fc').classList.remove('flipped');
 }
 function lsnFlip() {
   const fc = document.getElementById('lsn-fc');
   fc.classList.toggle('flipped');
-  if (fc.classList.contains('flipped')) playSound(lsnVocab[lsnFcIdx].zh, fc);
+  if (fc.classList.contains('flipped')) playSound(lsnFcDeck[lsnFcIdx].zh, fc);
 }
-function lsnFcNav(d) { lsnFcIdx = (lsnFcIdx + d + lsnVocab.length) % lsnVocab.length; lsnFcLoad(); }
-function lsnFcSpeak() { playSound(lsnVocab[lsnFcIdx].zh, document.getElementById('lsn-fc')); }
+function lsnFcNav(d) { lsnFcIdx = (lsnFcIdx + d + lsnFcDeck.length) % lsnFcDeck.length; lsnFcLoad(); }
+function lsnFcSpeak() { playSound(lsnFcDeck[lsnFcIdx].zh, document.getElementById('lsn-fc')); }
 
 // Mode 3: tone quiz
 let tnQueue = [], tnIdx = 0, tnC = 0, tnW = 0, tnT = 0, tnAns = false;
-const tnPool = lsnVocab.filter(v => v.tone > 0);
+
+const _toneCharMap = {'ā':1,'ē':1,'ī':1,'ō':1,'ū':1,'ǖ':1,
+                      'á':2,'é':2,'í':2,'ó':2,'ú':2,'ǘ':2,
+                      'ǎ':3,'ě':3,'ǐ':3,'ǒ':3,'ǔ':3,'ǚ':3,
+                      'à':4,'è':4,'ì':4,'ò':4,'ù':4,'ǜ':4};
+function _detectTone(syl) {
+  for (const ch of syl) if (_toneCharMap[ch]) return _toneCharMap[ch];
+  return 0;
+}
+function _stripTone(syl) { return syl.normalize('NFD').replace(/[̀-ͯ]/g,''); }
+
+const _phraseQuizItems = [];
+lsnPhrases.forEach(p => {
+  const chars = [...p.zh];
+  const syls = p.py.split(' ');
+  syls.forEach((syl, i) => {
+    const tone = _detectTone(syl);
+    if (!tone || i >= chars.length) return;
+    const zhHtml = chars.map((c,j) =>
+      j===i ? `<span style="color:#c62828">${c}</span>`
+             : `<span style="color:#ccc">${c}</span>`
+    ).join('');
+    _phraseQuizItems.push({ zh:p.zh, zhHtml, py:syl, base:_stripTone(syl), tone, th:p.th });
+  });
+});
+
+const tnPool = [
+  ...lsnVocab.filter(v => v.tone > 0).map(v => ({...v, zhHtml: v.zh})),
+  ..._phraseQuizItems
+];
 
 function lsnToneRestart() {
   tnQueue = lsnShuffle(tnPool); tnIdx = 0; tnC = 0; tnW = 0; tnT = 0;
@@ -1333,7 +1365,7 @@ function lsnToneLoad() {
   tnAns = false;
   const v = tnQueue[tnIdx];
   document.getElementById('tn-qnum').textContent = `ข้อ ${tnIdx+1} / ${tnQueue.length}`;
-  document.getElementById('tn-zh').textContent = v.zh;
+  document.getElementById('tn-zh').innerHTML = v.zhHtml || v.zh;
   document.getElementById('tn-th').textContent = v.th;
   document.getElementById('tn-base').textContent = v.base;
   document.getElementById('tn-fb').textContent = '';
@@ -1388,6 +1420,7 @@ let lsnBuilt = false;
 function lsnInit() {
   if (lsnBuilt) return;
   lsnBuilt = true;
+  lsnFcDeck = lsnShuffle([...lsnVocab, ...lsnPhrases]);
   lsnBuildGrid();
   lsnBuildPhrases();
   lsnFcLoad();
