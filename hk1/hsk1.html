@@ -176,13 +176,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 14px;
-    min-height: 80px;
+    margin-top: 20px;
+    gap: 6px;
     transition: opacity 0.5s;
   }
 
   .thai {
-    font-size: clamp(34px, 10vw, 52px);
+    font-size: clamp(24px, 6.5vw, 38px);
     color: #7fffd4;
     font-weight: bold;
     text-align: center;
@@ -190,18 +190,17 @@
   }
 
   .thpy {
-    font-size: clamp(22px, 6.5vw, 34px);
+    font-size: clamp(36px, 10vw, 56px);
     color: rgba(255,220,100,0.75);
-    margin-top: 4px;
     text-align: center;
     letter-spacing: 1px;
   }
 
   .english {
-    font-size: clamp(18px, 5vw, 26px);
+    font-size: clamp(14px, 3.5vw, 18px);
     color: rgba(255,255,255,0.4);
     font-style: italic;
-    margin-top: 4px;
+    margin-top: 2px;
     text-align: center;
   }
 
@@ -346,9 +345,9 @@
     .badge, .cat-badge { font-size: 0.95rem; padding: 7px 18px; }
     .chinese { font-size: clamp(100px, 18vw, 160px); }
     .pinyin  { font-size: clamp(50px, 8vw, 76px); min-height: 70px; }
-    .thai    { font-size: clamp(42px, 7vw, 68px); }
-    .thpy    { font-size: clamp(28px, 4.5vw, 44px); }
-    .english { font-size: clamp(20px, 3vw, 32px); }
+    .thai    { font-size: clamp(28px, 4vw, 44px); }
+    .thpy    { font-size: clamp(44px, 6vw, 68px); }
+    .english { font-size: clamp(14px, 2vw, 20px); }
     .play-btn { font-size: 1.2rem; padding: 15px 40px; }
     .ctrl-btn { padding: 13px 22px; font-size: 1.1rem; }
   }
@@ -365,9 +364,9 @@
 
     .chinese { font-size: clamp(140px, 17vw, 210px); }
     .pinyin  { font-size: clamp(72px, 8.5vw, 110px); min-height: 100px; }
-    .thai    { font-size: clamp(62px, 7.5vw, 96px); }
-    .thpy    { font-size: clamp(40px, 5vw, 62px); }
-    .english { font-size: clamp(28px, 3vw, 44px); }
+    .thai    { font-size: clamp(36px, 4vw, 56px); }
+    .thpy    { font-size: clamp(60px, 6.5vw, 90px); }
+    .english { font-size: clamp(16px, 2vw, 24px); }
     .phase-label { font-size: 1.2rem; margin-top: 28px; }
 
     .ctrl-btn { padding: 14px 28px; font-size: 1.2rem; }
@@ -435,8 +434,8 @@
       <div class="chinese" id="chinese">你</div>
       <div class="pinyin" id="pinyin">nǐ</div>
       <div class="translation-wrap" id="translation">
-        <div class="thai" id="thai">คุณ / เธอ</div>
         <div class="thpy" id="thpy">(นี่)</div>
+        <div class="thai" id="thai">คุณ / เธอ</div>
         <div class="english" id="english">you</div>
       </div>
     </div>
@@ -447,7 +446,6 @@
     <button class="ctrl-btn" onclick="advance(-1)">◀</button>
     <button class="ctrl-btn play-btn" id="playBtn" onclick="togglePlay()">▶ เริ่ม</button>
     <button class="ctrl-btn" onclick="advance(1)">▶▶</button>
-    <button class="ctrl-btn" onclick="shuffle()">🔀</button>
   </div>
   <!-- Key hints -->
   <div class="keyhints">
@@ -625,7 +623,7 @@ fetch('hsk1-data.json')
   .then(r => r.json())
   .then(data => {
     deck = data;
-    updateCard(false);
+    shuffle();
   })
   .catch(err => console.error('โหลด hsk1-data.json ไม่ได้:', err));
 </script>
