@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HSK1">
+<meta name="theme-color" content="#7b2fff">
+<link rel="manifest" href="manifest.json">
 <title>HSK1 Flashcards</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -512,8 +518,6 @@ function setSpeed(i) {
   document.querySelectorAll('.speed-dot').forEach((d, j) => {
     d.classList.toggle('active', j === i);
   });
-  // เปลี่ยน rate แล้วพูดซ้ำคำปัจจุบันให้ฟังเสียงใหม่
-  if (deck.length) speak(deck[idx].zh);
 }
 
 
@@ -632,18 +636,23 @@ document.addEventListener('touchend', e => {
   if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return; // too small = tap
   if (Math.abs(dx) > Math.abs(dy)) {
     // horizontal swipe
-    if (dx < -40) advance(1);   // swipe left = next
-    if (dx >  40) advance(-1);  // swipe right = prev
+    if (dx < -40) advance(1);    // swipe left = next
+    if (dx >  40) advance(-1);   // swipe right = prev
   } else {
     // vertical swipe
-    if (dy < -40) setSpeed(Math.max(0, speedIdx - 1));  // swipe up = faster
-    if (dy >  40) setSpeed(Math.min(4, speedIdx + 1));  // swipe down = slower
+    if (dy < -40) advance(1);    // swipe up = next
+    if (dy >  40) advance(-1);   // swipe down = prev
   }
 }, { passive: true });
 
 // Init — โหลดข้อมูลจากตัวแปร HSK1_DATA (hsk1-data.js)
 deck = HSK1_DATA;
 shuffle();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/hsk1-flashcards/hk1/sw.js');
+}
 </script>
 </body>
 </html>
