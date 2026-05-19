@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSK1 Flashcards</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif;
+    background: #0d0d1a;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    user-select: none;
+  }
+
+  /* Animated gradient background */
+  .bg {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0d0d1a, #1a0d2e, #0d1a2e);
+    z-index: 0;
+  }
+
+  .bg-glow {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.25;
+    z-index: 0;
+    animation: drift 8s ease-in-out infinite alternate;
+  }
+
+  .glow1 { width: 500px; height: 500px; background: #7b2fff; top: -100px; left: -100px; }
+  .glow2 { width: 400px; height: 400px; background: #ff6b2f; bottom: -100px; right: -100px; animation-delay: 3s; }
+  .glow3 { width: 300px; height: 300px; background: #2fffff; top: 50%; left: 50%; animation-delay: 5s; }
+
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(40px, 30px) scale(1.1); }
+  }
+
+  /* Main layout */
+  .screen {
+    position: relative;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 30px 60px;
+  }
+
+  /* Top bar */
+  .topbar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .badge {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 22px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+  }
+
+  .progress-wrap {
+    flex: 1;
+    margin: 0 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7b2fff, #ff6b2f);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+  }
+
+  .progress-text {
+    font-size: 1rem;
+    opacity: 0.6;
+  }
+
+  .cat-badge {
+    background: rgba(123,47,255,0.3);
+    border: 1px solid rgba(123,47,255,0.5);
+    padding: 8px 22px;
+    border-radius: 30px;
+    font-size: 1rem;
+  }
+
+  /* Card area */
+  .card-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 40px;
+  }
+
+  /* Phase indicator dots */
+  .phase-dots {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.3s;
+  }
+
+  .dot.active { background: #ffd200; transform: scale(1.3); }
+  .dot.done   { background: rgba(255,255,255,0.5); }
+
+  /* Card itself */
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 1100px;
+    min-height: 420px;
+    position: relative;
+  }
+
+  .chinese {
+    font-size: clamp(120px, 18vw, 220px);
+    line-height: 1;
+    font-weight: 900;
+    text-shadow: 0 0 60px rgba(123,47,255,0.6), 0 4px 20px rgba(0,0,0,0.5);
+    transition: all 0.4s ease;
+  }
+
+  .pinyin {
+    font-size: clamp(52px, 7.5vw, 100px);
+    letter-spacing: 4px;
+    color: #ffd200;
+    margin-top: 10px;
+    min-height: 100px;
+    transition: opacity 0.5s;
+  }
+
+  .translation-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    min-height: 140px;
+    transition: opacity 0.5s;
+  }
+
+  .thai {
+    font-size: clamp(50px, 7vw, 90px);
+    color: #7fffd4;
+    font-weight: bold;
+  }
+
+  .english {
+    font-size: clamp(28px, 3.5vw, 52px);
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  .hidden { opacity: 0; pointer-events: none; }
+
+  /* Phase label */
+  .phase-label {
+    font-size: 1.3rem;
+    opacity: 0.5;
+    letter-spacing: 2px;
+    margin-top: 30px;
+    min-height: 30px;
+    text-transform: uppercase;
+  }
+
+  /* Timer arc */
+  .timer-wrap {
+    position: fixed;
+    bottom: 90px;
+    right: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timer-arc svg {
+    transform: rotate(-90deg);
+  }
+
+  .arc-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 5; }
+  .arc-fill {
+    fill: none;
+    stroke: #ffd200;
+    stroke-width: 5;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.25s linear;
+  }
+
+  .timer-num {
+    position: absolute;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #ffd200;
+  }
+
+  /* Bottom controls */
+  .bottombar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .key-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    opacity: 0.5;
+  }
+
+  .key {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 0.9rem;
+    font-family: monospace;
+  }
+
+  .divider { opacity: 0.2; font-size: 1.2rem; }
+
+  /* Speed indicator */
+  .speed-bar {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.9rem;
+    opacity: 0.45;
+  }
+
+  .speed-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .speed-dot.active { background: #ffd200; transform: scale(1.5); }
+
+  /* Paused overlay */
+  .paused-badge {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.7);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 20px 50px;
+    font-size: 2rem;
+    letter-spacing: 4px;
+    display: none;
+    z-index: 10;
+  }
+
+  .paused-badge.show { display: block; }
+
+  /* Slide-in animation */
+  @keyframes slideIn {
+    from { transform: translateX(60px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+
+  .animate-in { animation: slideIn 0.35s ease; }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="bg-glow glow1"></div>
+<div class="bg-glow glow2"></div>
+<div class="bg-glow glow3"></div>
+<div class="paused-badge" id="pausedBadge">⏸ หยุดชั่วคราว</div>
+
+<div class="screen">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="badge">HSK 1</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>
+      <div class="progress-text" id="pText">1 / 150</div>
+    </div>
+    <div class="cat-badge" id="catBadge">ทั้งหมด</div>
+  </div>
+
+  <!-- Card area -->
+  <div class="card-area">
+    <div class="card" id="card">
+      <div class="phase-dots" id="phaseDots">
+        <div class="dot" id="d0"></div>
+        <div class="dot" id="d1"></div>
+        <div class="dot" id="d2"></div>
+      </div>
+
+      <div class="chinese" id="chinese">你</div>
+      <div class="pinyin hidden" id="pinyin">nǐ</div>
+
+      <div class="translation-wrap hidden" id="translation">
+        <div class="thai" id="thai">คุณ / เธอ</div>
+        <div class="english" id="english">you</div>
+      </div>
+
+      <div class="phase-label" id="phaseLabel">ฟังเสียง...</div>
+    </div>
+  </div>
+
+  <!-- Bottom hints -->
+  <div class="bottombar">
+    <div class="key-hint"><span class="key">←</span><span class="key">→</span> เปลี่ยนใบ</div>
+    <div class="divider">|</div>
+    <div class="key-hint"><span class="key">OK / Enter</span> เล่น / หยุด</div>
+    <div class="divider">|</div>
+    <div class="key-hint"><span class="key">↑</span><span class="key">↓</span> ความเร็ว</div>
+    <div class="divider">|</div>
+    <div class="key-hint"><span class="key">S</span> สุ่มคำ</div>
+  </div>
+
+</div>
+
+<!-- Timer arc (fixed position) -->
+<div class="timer-wrap">
+  <div class="timer-arc">
+    <svg width="70" height="70" viewBox="0 0 70 70">
+      <circle class="arc-bg" cx="35" cy="35" r="28"/>
+      <circle class="arc-fill" id="arcFill" cx="35" cy="35" r="28"
+        stroke-dasharray="176" stroke-dashoffset="0"/>
+    </svg>
+  </div>
+  <div class="timer-num" id="timerNum">5</div>
+</div>
+
+<!-- Speed bar -->
+<div class="speed-bar" id="speedBar">
+  เร็ว
+  <div class="speed-dot" data-i="0" onclick="setSpeed(0)"></div>
+  <div class="speed-dot" data-i="1" onclick="setSpeed(1)"></div>
+  <div class="speed-dot active" data-i="2" onclick="setSpeed(2)"></div>
+  <div class="speed-dot" data-i="3" onclick="setSpeed(3)"></div>
+  <div class="speed-dot" data-i="4" onclick="setSpeed(4)"></div>
+  ช้า
+</div>
+
+<script>
+const HSK1 = [
+  {zh:"你好",py:"nǐ hǎo",th:"สวัสดี",en:"hello",cat:"ทักทาย"},
+  {zh:"谢谢",py:"xiè xie",th:"ขอบคุณ",en:"thank you",cat:"ทักทาย"},
+  {zh:"对不起",py:"duì bu qǐ",th:"ขอโทษ",en:"sorry",cat:"ทักทาย"},
+  {zh:"不客气",py:"bú kè qi",th:"ไม่เป็นไร",en:"you're welcome",cat:"ทักทาย"},
+  {zh:"再见",py:"zài jiàn",th:"ลาก่อน",en:"goodbye",cat:"ทักทาย"},
+  {zh:"没关系",py:"méi guān xi",th:"ไม่เป็นไร",en:"it's ok",cat:"ทักทาย"},
+  {zh:"喂",py:"wèi",th:"ฮัลโหล (โทรศัพท์)",en:"hello (phone)",cat:"ทักทาย"},
+  {zh:"我",py:"wǒ",th:"ฉัน / ผม",en:"I / me",cat:"สรรพนาม"},
+  {zh:"你",py:"nǐ",th:"คุณ / เธอ",en:"you",cat:"สรรพนาม"},
+  {zh:"他",py:"tā",th:"เขา (ชาย)",en:"he / him",cat:"สรรพนาม"},
+  {zh:"她",py:"tā",th:"เธอ (หญิง)",en:"she / her",cat:"สรรพนาม"},
+  {zh:"我们",py:"wǒ men",th:"พวกเรา",en:"we / us",cat:"สรรพนาม"},
+  {zh:"爸爸",py:"bà ba",th:"พ่อ",en:"father",cat:"ครอบครัว"},
+  {zh:"妈妈",py:"mā ma",th:"แม่",en:"mother",cat:"ครอบครัว"},
+  {zh:"儿子",py:"ér zi",th:"ลูกชาย",en:"son",cat:"ครอบครัว"},
+  {zh:"女儿",py:"nǚ ér",th:"ลูกสาว",en:"daughter",cat:"ครอบครัว"},
+  {zh:"朋友",py:"péng you",th:"เพื่อน",en:"friend",cat:"ครอบครัว"},
+  {zh:"一",py:"yī",th:"หนึ่ง",en:"one",cat:"ตัวเลข"},
+  {zh:"二",py:"èr",th:"สอง",en:"two",cat:"ตัวเลข"},
+  {zh:"三",py:"sān",th:"สาม",en:"three",cat:"ตัวเลข"},
+  {zh:"四",py:"sì",th:"สี่",en:"four",cat:"ตัวเลข"},
+  {zh:"五",py:"wǔ",th:"ห้า",en:"five",cat:"ตัวเลข"},
+  {zh:"六",py:"liù",th:"หก",en:"six",cat:"ตัวเลข"},
+  {zh:"七",py:"qī",th:"เจ็ด",en:"seven",cat:"ตัวเลข"},
+  {zh:"八",py:"bā",th:"แปด",en:"eight",cat:"ตัวเลข"},
+  {zh:"九",py:"jiǔ",th:"เก้า",en:"nine",cat:"ตัวเลข"},
+  {zh:"十",py:"shí",th:"สิบ",en:"ten",cat:"ตัวเลข"},
+  {zh:"两",py:"liǎng",th:"สอง (ลักษณนาม)",en:"two (measure)",cat:"ตัวเลข"},
+  {zh:"百",py:"bǎi",th:"ร้อย",en:"hundred",cat:"ตัวเลข"},
+  {zh:"今天",py:"jīn tiān",th:"วันนี้",en:"today",cat:"เวลา"},
+  {zh:"明天",py:"míng tiān",th:"พรุ่งนี้",en:"tomorrow",cat:"เวลา"},
+  {zh:"昨天",py:"zuó tiān",th:"เมื่อวาน",en:"yesterday",cat:"เวลา"},
+  {zh:"现在",py:"xiàn zài",th:"ตอนนี้",en:"now",cat:"เวลา"},
+  {zh:"年",py:"nián",th:"ปี",en:"year",cat:"เวลา"},
+  {zh:"月",py:"yuè",th:"เดือน",en:"month",cat:"เวลา"},
+  {zh:"日",py:"rì",th:"วัน",en:"day",cat:"เวลา"},
+  {zh:"星期",py:"xīng qī",th:"สัปดาห์",en:"week",cat:"เวลา"},
+  {zh:"时候",py:"shí hou",th:"เวลา / ตอนที่",en:"time / when",cat:"เวลา"},
+  {zh:"上午",py:"shàng wǔ",th:"ช่วงเช้า",en:"morning",cat:"เวลา"},
+  {zh:"下午",py:"xià wǔ",th:"ช่วงบ่าย",en:"afternoon",cat:"เวลา"},
+  {zh:"中午",py:"zhōng wǔ",th:"เที่ยง",en:"noon",cat:"เวลา"},
+  {zh:"点",py:"diǎn",th:"โมง",en:"o'clock",cat:"เวลา"},
+  {zh:"分钟",py:"fēn zhōng",th:"นาที",en:"minute",cat:"เวลา"},
+  {zh:"家",py:"jiā",th:"บ้าน",en:"home",cat:"สถานที่"},
+  {zh:"学校",py:"xué xiào",th:"โรงเรียน",en:"school",cat:"สถานที่"},
+  {zh:"医院",py:"yī yuàn",th:"โรงพยาบาล",en:"hospital",cat:"สถานที่"},
+  {zh:"商店",py:"shāng diàn",th:"ร้านค้า",en:"shop",cat:"สถานที่"},
+  {zh:"饭馆",py:"fàn guǎn",th:"ร้านอาหาร",en:"restaurant",cat:"สถานที่"},
+  {zh:"北京",py:"Běi jīng",th:"ปักกิ่ง",en:"Beijing",cat:"สถานที่"},
+  {zh:"中国",py:"Zhōng guó",th:"จีน",en:"China",cat:"สถานที่"},
+  {zh:"老师",py:"lǎo shī",th:"ครู",en:"teacher",cat:"คน"},
+  {zh:"学生",py:"xué sheng",th:"นักเรียน",en:"student",cat:"คน"},
+  {zh:"医生",py:"yī shēng",th:"หมอ",en:"doctor",cat:"คน"},
+  {zh:"同学",py:"tóng xué",th:"เพื่อนร่วมชั้น",en:"classmate",cat:"คน"},
+  {zh:"先生",py:"xiān sheng",th:"คุณผู้ชาย",en:"Mr.",cat:"คน"},
+  {zh:"小姐",py:"xiǎo jiě",th:"คุณผู้หญิง",en:"Miss",cat:"คน"},
+  {zh:"女人",py:"nǚ rén",th:"ผู้หญิง",en:"woman",cat:"คน"},
+  {zh:"人",py:"rén",th:"คน",en:"person",cat:"คน"},
+  {zh:"水",py:"shuǐ",th:"น้ำ",en:"water",cat:"อาหาร"},
+  {zh:"茶",py:"chá",th:"ชา",en:"tea",cat:"อาหาร"},
+  {zh:"米饭",py:"mǐ fàn",th:"ข้าว",en:"rice",cat:"อาหาร"},
+  {zh:"菜",py:"cài",th:"ผัก / อาหาร",en:"dish / vegetable",cat:"อาหาร"},
+  {zh:"苹果",py:"píng guǒ",th:"แอปเปิ้ล",en:"apple",cat:"อาหาร"},
+  {zh:"水果",py:"shuǐ guǒ",th:"ผลไม้",en:"fruit",cat:"อาหาร"},
+  {zh:"好吃",py:"hǎo chī",th:"อร่อย",en:"delicious",cat:"อาหาร"},
+  {zh:"杯子",py:"bēi zi",th:"แก้ว / ถ้วย",en:"cup",cat:"อาหาร"},
+  {zh:"猫",py:"māo",th:"แมว",en:"cat",cat:"สัตว์"},
+  {zh:"狗",py:"gǒu",th:"หมา",en:"dog",cat:"สัตว์"},
+  {zh:"书",py:"shū",th:"หนังสือ",en:"book",cat:"สิ่งของ"},
+  {zh:"电脑",py:"diàn nǎo",th:"คอมพิวเตอร์",en:"computer",cat:"สิ่งของ"},
+  {zh:"电视",py:"diàn shì",th:"โทรทัศน์",en:"television",cat:"สิ่งของ"},
+  {zh:"电影",py:"diàn yǐng",th:"ภาพยนตร์",en:"movie",cat:"สิ่งของ"},
+  {zh:"钱",py:"qián",th:"เงิน",en:"money",cat:"สิ่งของ"},
+  {zh:"桌子",py:"zhuō zi",th:"โต๊ะ",en:"table",cat:"สิ่งของ"},
+  {zh:"椅子",py:"yǐ zi",th:"เก้าอี้",en:"chair",cat:"สิ่งของ"},
+  {zh:"名字",py:"míng zi",th:"ชื่อ",en:"name",cat:"สิ่งของ"},
+  {zh:"块",py:"kuài",th:"หยวน (เงิน)",en:"yuan",cat:"สิ่งของ"},
+  {zh:"是",py:"shì",th:"เป็น / ใช่",en:"is / am / are",cat:"กริยา"},
+  {zh:"有",py:"yǒu",th:"มี",en:"have",cat:"กริยา"},
+  {zh:"在",py:"zài",th:"อยู่ที่",en:"at / in",cat:"กริยา"},
+  {zh:"来",py:"lái",th:"มา",en:"come",cat:"กริยา"},
+  {zh:"去",py:"qù",th:"ไป",en:"go",cat:"กริยา"},
+  {zh:"回",py:"huí",th:"กลับ",en:"return",cat:"กริยา"},
+  {zh:"吃",py:"chī",th:"กิน",en:"eat",cat:"กริยา"},
+  {zh:"喝",py:"hē",th:"ดื่ม",en:"drink",cat:"กริยา"},
+  {zh:"看",py:"kàn",th:"ดู / มอง",en:"look / watch",cat:"กริยา"},
+  {zh:"看见",py:"kàn jiàn",th:"มองเห็น",en:"see",cat:"กริยา"},
+  {zh:"听",py:"tīng",th:"ฟัง",en:"listen",cat:"กริยา"},
+  {zh:"说话",py:"shuō huà",th:"พูด",en:"speak",cat:"กริยา"},
+  {zh:"读",py:"dú",th:"อ่าน",en:"read",cat:"กริยา"},
+  {zh:"写",py:"xiě",th:"เขียน",en:"write",cat:"กริยา"},
+  {zh:"学习",py:"xué xí",th:"เรียน",en:"study",cat:"กริยา"},
+  {zh:"工作",py:"gōng zuò",th:"ทำงาน",en:"work",cat:"กริยา"},
+  {zh:"睡觉",py:"shuì jiào",th:"นอนหลับ",en:"sleep",cat:"กริยา"},
+  {zh:"买",py:"mǎi",th:"ซื้อ",en:"buy",cat:"กริยา"},
+  {zh:"开",py:"kāi",th:"เปิด / ขับ",en:"open / drive",cat:"กริยา"},
+  {zh:"坐",py:"zuò",th:"นั่ง",en:"sit",cat:"กริยา"},
+  {zh:"做",py:"zuò",th:"ทำ",en:"do / make",cat:"กริยา"},
+  {zh:"住",py:"zhù",th:"อาศัยอยู่",en:"live",cat:"กริยา"},
+  {zh:"叫",py:"jiào",th:"ชื่อ / เรียก",en:"be called",cat:"กริยา"},
+  {zh:"认识",py:"rèn shi",th:"รู้จัก",en:"know (person)",cat:"กริยา"},
+  {zh:"想",py:"xiǎng",th:"อยาก / คิด",en:"want / think",cat:"กริยา"},
+  {zh:"会",py:"huì",th:"สามารถ",en:"can / know how",cat:"กริยา"},
+  {zh:"能",py:"néng",th:"สามารถ",en:"can / able to",cat:"กริยา"},
+  {zh:"请",py:"qǐng",th:"กรุณา / เชิญ",en:"please / invite",cat:"กริยา"},
+  {zh:"打电话",py:"dǎ diàn huà",th:"โทรศัพท์",en:"make a call",cat:"กริยา"},
+  {zh:"下雨",py:"xià yǔ",th:"ฝนตก",en:"rain",cat:"กริยา"},
+  {zh:"好",py:"hǎo",th:"ดี",en:"good",cat:"คุณศัพท์"},
+  {zh:"大",py:"dà",th:"ใหญ่",en:"big",cat:"คุณศัพท์"},
+  {zh:"小",py:"xiǎo",th:"เล็ก",en:"small",cat:"คุณศัพท์"},
+  {zh:"多",py:"duō",th:"มาก",en:"many / much",cat:"คุณศัพท์"},
+  {zh:"少",py:"shǎo",th:"น้อย",en:"few / little",cat:"คุณศัพท์"},
+  {zh:"热",py:"rè",th:"ร้อน",en:"hot",cat:"คุณศัพท์"},
+  {zh:"冷",py:"lěng",th:"หนาว / เย็น",en:"cold",cat:"คุณศัพท์"},
+  {zh:"高兴",py:"gāo xìng",th:"ดีใจ",en:"happy",cat:"คุณศัพท์"},
+  {zh:"漂亮",py:"piào liang",th:"สวย",en:"beautiful",cat:"คุณศัพท์"},
+  {zh:"不",py:"bù",th:"ไม่",en:"not / no",cat:"คำอื่น"},
+  {zh:"没",py:"méi",th:"ไม่มี",en:"not have",cat:"คำอื่น"},
+  {zh:"很",py:"hěn",th:"มาก / ค่อนข้าง",en:"very",cat:"คำอื่น"},
+  {zh:"太",py:"tài",th:"เกินไป",en:"too",cat:"คำอื่น"},
+  {zh:"都",py:"dōu",th:"ทั้งหมด",en:"all / both",cat:"คำอื่น"},
+  {zh:"也",py:"yě",th:"ก็ / ด้วย",en:"also",cat:"คำอื่น"},
+  {zh:"和",py:"hé",th:"และ",en:"and",cat:"คำอื่น"},
+  {zh:"的",py:"de",th:"ของ (อนุภาค)",en:"(particle)",cat:"คำอื่น"},
+  {zh:"了",py:"le",th:"(อนุภาคสำเร็จ)",en:"(completion)",cat:"คำอื่น"},
+  {zh:"吗",py:"ma",th:"ไหม (คำถาม)",en:"(question)",cat:"คำอื่น"},
+  {zh:"呢",py:"ne",th:"แล้ว...ล่ะ",en:"(question)",cat:"คำอื่น"},
+  {zh:"什么",py:"shén me",th:"อะไร",en:"what",cat:"คำถาม"},
+  {zh:"谁",py:"shéi",th:"ใคร",en:"who",cat:"คำถาม"},
+  {zh:"哪",py:"nǎ",th:"อันไหน",en:"which",cat:"คำถาม"},
+  {zh:"哪儿",py:"nǎr",th:"ที่ไหน",en:"where",cat:"คำถาม"},
+  {zh:"怎么",py:"zěn me",th:"อย่างไร",en:"how",cat:"คำถาม"},
+  {zh:"怎么样",py:"zěn me yàng",th:"เป็นอย่างไร",en:"how about",cat:"คำถาม"},
+  {zh:"多少",py:"duō shao",th:"เท่าไหร่",en:"how many/much",cat:"คำถาม"},
+  {zh:"几",py:"jǐ",th:"กี่",en:"how many",cat:"คำถาม"},
+  {zh:"上",py:"shàng",th:"บน / ขึ้น",en:"up / on",cat:"ทิศทาง"},
+  {zh:"下",py:"xià",th:"ล่าง / ลง",en:"down / below",cat:"ทิศทาง"},
+  {zh:"里",py:"lǐ",th:"ใน / ข้างใน",en:"inside",cat:"ทิศทาง"},
+  {zh:"前面",py:"qián miàn",th:"ข้างหน้า",en:"front",cat:"ทิศทาง"},
+  {zh:"后面",py:"hòu miàn",th:"ข้างหลัง",en:"behind",cat:"ทิศทาง"},
+  {zh:"飞机",py:"fēi jī",th:"เครื่องบิน",en:"airplane",cat:"เดินทาง"},
+  {zh:"出租车",py:"chū zū chē",th:"แท็กซี่",en:"taxi",cat:"เดินทาง"},
+  {zh:"汉语",py:"Hàn yǔ",th:"ภาษาจีน",en:"Chinese language",cat:"ภาษา"},
+  {zh:"东西",py:"dōng xi",th:"สิ่งของ",en:"thing",cat:"ภาษา"},
+  {zh:"号",py:"hào",th:"หมายเลข / วันที่",en:"number / date",cat:"ภาษา"},
+  {zh:"本",py:"běn",th:"(ลักษณนามหนังสือ)",en:"(book measure)",cat:"ภาษา"},
+  {zh:"个",py:"gè",th:"(ลักษณนามทั่วไป)",en:"(measure word)",cat:"ภาษา"},
+  {zh:"岁",py:"suì",th:"ปี (อายุ)",en:"years old",cat:"ภาษา"},
+  {zh:"些",py:"xiē",th:"บางส่วน",en:"some",cat:"ภาษา"},
+  {zh:"天气",py:"tiān qì",th:"สภาพอากาศ",en:"weather",cat:"ภาษา"},
+  {zh:"那",py:"nà",th:"นั้น",en:"that",cat:"ภาษา"},
+  {zh:"这",py:"zhè",th:"นี้",en:"this",cat:"ภาษา"},
+];
+
+// Speeds: [showSec, translateSec]
+const SPEEDS = [
+  [2, 2],  // เร็วมาก
+  [3, 2],  // เร็ว
+  [4, 3],  // ปกติ
+  [6, 4],  // ช้า
+  [9, 6],  // ช้ามาก
+];
+let speedIdx = 2;
+
+let deck = [...HSK1];
+let idx = 0;
+let isPlaying = false;
+let phase = 0; // 0=show char, 1=show pinyin+speak, 2=show translation
+let phaseTimer = null;
+let arcTimer = null;
+let arcRemaining = 0;
+let arcTotal = 0;
+const CIRC = 176;
+
+function setSpeed(i) {
+  speedIdx = i;
+  document.querySelectorAll('.speed-dot').forEach((d, j) => {
+    d.classList.toggle('active', j === i);
+  });
+  if (isPlaying) { clearPhase(); runPhase(); }
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 0.85;
+  u.pitch = 1.0;
+  window.speechSynthesis.speak(u);
+}
+
+function updateCard(animate) {
+  const w = deck[idx];
+  const el = document.getElementById('card');
+  if (animate) {
+    el.classList.remove('animate-in');
+    void el.offsetWidth;
+    el.classList.add('animate-in');
+  }
+  document.getElementById('chinese').textContent = w.zh;
+  document.getElementById('pinyin').textContent = w.py;
+  document.getElementById('thai').textContent = w.th;
+  document.getElementById('english').textContent = w.en;
+  document.getElementById('catBadge').textContent = w.cat;
+  document.getElementById('pFill').style.width = ((idx + 1) / deck.length * 100) + '%';
+  document.getElementById('pText').textContent = `${idx + 1} / ${deck.length}`;
+}
+
+function showPhase(p) {
+  phase = p;
+  const pinEl = document.getElementById('pinyin');
+  const trEl  = document.getElementById('translation');
+  const lbl   = document.getElementById('phaseLabel');
+
+  // Dots
+  ['d0','d1','d2'].forEach((id, i) => {
+    document.getElementById(id).className = 'dot' + (i === p ? ' active' : i < p ? ' done' : '');
+  });
+
+  if (p === 0) {
+    pinEl.classList.add('hidden');
+    trEl.classList.add('hidden');
+    lbl.textContent = 'ดูตัวอักษร...';
+  } else if (p === 1) {
+    pinEl.classList.remove('hidden');
+    trEl.classList.add('hidden');
+    lbl.textContent = 'ฟังเสียง...';
+    speak(deck[idx].zh);
+  } else {
+    pinEl.classList.remove('hidden');
+    trEl.classList.remove('hidden');
+    lbl.textContent = 'คำแปล';
+  }
+}
+
+function startArc(seconds) {
+  arcTotal = seconds;
+  arcRemaining = seconds;
+  document.getElementById('timerNum').textContent = seconds;
+  document.getElementById('arcFill').style.strokeDashoffset = 0;
+
+  clearInterval(arcTimer);
+  const interval = 100;
+  const totalMs = seconds * 1000;
+  let elapsed = 0;
+
+  arcTimer = setInterval(() => {
+    elapsed += interval;
+    const progress = elapsed / totalMs;
+    document.getElementById('arcFill').style.strokeDashoffset = CIRC * progress;
+    const sLeft = Math.ceil((totalMs - elapsed) / 1000);
+    document.getElementById('timerNum').textContent = sLeft > 0 ? sLeft : '';
+    if (elapsed >= totalMs) clearInterval(arcTimer);
+  }, interval);
+}
+
+function clearPhase() {
+  clearTimeout(phaseTimer);
+  clearInterval(arcTimer);
+}
+
+function runPhase() {
+  if (!isPlaying) return;
+  const [showSec, transSec] = SPEEDS[speedIdx];
+
+  if (phase === 0) {
+    startArc(showSec);
+    phaseTimer = setTimeout(() => { showPhase(1); runPhase(); }, showSec * 1000);
+  } else if (phase === 1) {
+    startArc(transSec);
+    phaseTimer = setTimeout(() => { showPhase(2); runPhase(); }, transSec * 1000);
+  } else {
+    const total = showSec + transSec;
+    startArc(total);
+    phaseTimer = setTimeout(() => { advance(1); }, total * 1000);
+  }
+}
+
+function advance(dir) {
+  clearPhase();
+  idx = (idx + dir + deck.length) % deck.length;
+  phase = 0;
+  updateCard(dir > 0);
+  showPhase(0);
+  if (isPlaying) runPhase();
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const badge = document.getElementById('pausedBadge');
+  if (!isPlaying) {
+    clearPhase();
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 1500);
+    document.getElementById('timerNum').textContent = '⏸';
+    document.getElementById('arcFill').style.strokeDashoffset = 0;
+    document.getElementById('phaseLabel').textContent = 'หยุดชั่วคราว';
+  } else {
+    badge.classList.remove('show');
+    runPhase();
+  }
+}
+
+function shuffle() {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  idx = 0;
+  phase = 0;
+  updateCard(false);
+  showPhase(0);
+  clearPhase();
+  if (isPlaying) runPhase();
+}
+
+// Keyboard — TV remote sends these
+document.addEventListener('keydown', e => {
+  switch(e.key) {
+    case 'ArrowRight':
+    case 'MediaFastForward':
+      e.preventDefault(); advance(1); break;
+    case 'ArrowLeft':
+    case 'MediaRewind':
+      e.preventDefault(); advance(-1); break;
+    case 'ArrowUp':
+      e.preventDefault(); setSpeed(Math.max(0, speedIdx - 1)); break;
+    case 'ArrowDown':
+      e.preventDefault(); setSpeed(Math.min(4, speedIdx + 1)); break;
+    case 'Enter':
+    case ' ':
+    case 'MediaPlay':
+    case 'MediaPlayPause':
+      e.preventDefault(); togglePlay(); break;
+    case 's':
+    case 'S':
+      shuffle(); break;
+  }
+});
+
+// Init — เริ่มหยุด รอให้กด OK
+updateCard(false);
+showPhase(0);
+document.getElementById('timerNum').textContent = '▶';
+document.getElementById('phaseLabel').textContent = 'กด OK เพื่อเริ่ม';
+</script>
+</body>
+</html>
