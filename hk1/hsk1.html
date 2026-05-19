@@ -488,7 +488,7 @@
 const RATES = [1.2, 1.0, 0.85, 0.7, 0.55];
 let speedIdx = 2; // default 0.85
 // วินาทีต่อใบ (คงที่)
-const CARD_SECONDS = 2;
+const CARD_SECONDS = 4;
 
 let deck = [];
 let idx = 0;
@@ -543,8 +543,8 @@ function runPhase() {
   if (!isPlaying) return;
   const text = deck[idx].zh;
   speak(text);
-  // พูดรอบที่ 2 ที่ครึ่งทาง
-  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, CARD_SECONDS * 500);
+  // พูดรอบที่ 2 ที่ 2 วินาที
+  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, 2000);
   phaseTimer = setTimeout(() => { advance(1); }, CARD_SECONDS * 1000);
 }
 
