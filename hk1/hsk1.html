@@ -154,12 +154,20 @@
 
   /* === Font sizes: Mobile === */
   .chinese {
-    font-size: clamp(80px, 24vw, 120px);
-    line-height: 1;
+    font-size: clamp(36px, 10vw, 120px);
+    line-height: 1.2;
     font-weight: 900;
     color: #ffffff;
+    text-align: center;
+    word-break: break-word;
     text-shadow: 0 0 60px rgba(180,140,255,0.5), 0 2px 12px rgba(0,0,0,0.5);
     transition: all 0.4s ease;
+  }
+
+  /* ประโยค — ข้อความยาว ย่อ font */
+  .chinese.sentence {
+    font-size: clamp(28px, 6vw, 52px);
+    letter-spacing: 2px;
   }
 
   .pinyin {
@@ -524,7 +532,9 @@ function updateCard(animate) {
     void el.offsetWidth;
     el.classList.add('animate-in');
   }
-  document.getElementById('chinese').textContent = w.zh;
+  const chEl = document.getElementById('chinese');
+  chEl.textContent = w.zh;
+  chEl.classList.toggle('sentence', w.zh.length > 4);
   document.getElementById('pinyin').textContent = w.py;
   document.getElementById('thai').textContent = w.th;
   document.getElementById('thpy').textContent = w.tp || '';
