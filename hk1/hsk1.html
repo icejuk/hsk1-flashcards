@@ -478,26 +478,31 @@
   <div class="speed-dot active" data-i="2" onclick="setSpeed(2)"></div>
   <div class="speed-dot" data-i="3" onclick="setSpeed(3)"></div>
   <div class="speed-dot" data-i="4" onclick="setSpeed(4)"></div>
+  <!-- ตรงกลาง = 0.85 (rate ปกติ) -->
   ช้า
 </div>
 
 <script src="hsk1-data.js"></script>
 <script>
-// วินาทีต่อใบ
-const SPEEDS = [2, 3, 5, 8, 12];
-let speedIdx = 1; // default 3 วิ
+// ความเร็วในการพูด (TTS rate) — ซ้าย=เร็ว, ขวา=ช้า
+const RATES = [1.2, 1.0, 0.85, 0.7, 0.55];
+let speedIdx = 2; // default 0.85
+// วินาทีต่อใบ (คงที่)
+const CARD_SECONDS = 2;
 
 let deck = [];
 let idx = 0;
 let isPlaying = false;
 let phaseTimer = null;
+let repeatTimer = null;
 
 function setSpeed(i) {
   speedIdx = i;
   document.querySelectorAll('.speed-dot').forEach((d, j) => {
     d.classList.toggle('active', j === i);
   });
-  if (isPlaying) { clearPhase(); runPhase(); }
+  // เปลี่ยน rate แล้วพูดซ้ำคำปัจจุบันให้ฟังเสียงใหม่
+  if (deck.length) speak(deck[idx].zh);
 }
 
 
@@ -506,7 +511,7 @@ function speak(text) {
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
-  u.rate = 1.85;
+  u.rate = RATES[speedIdx];
   u.pitch = 1.0;
   window.speechSynthesis.speak(u);
 }
@@ -531,12 +536,16 @@ function updateCard(animate) {
 
 function clearPhase() {
   clearTimeout(phaseTimer);
+  clearTimeout(repeatTimer);
 }
 
 function runPhase() {
   if (!isPlaying) return;
-  speak(deck[idx].zh);
-  phaseTimer = setTimeout(() => { advance(1); }, SPEEDS[speedIdx] * 1000);
+  const text = deck[idx].zh;
+  speak(text);
+  // พูดรอบที่ 2 ที่ครึ่งทาง
+  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, CARD_SECONDS * 500);
+  phaseTimer = setTimeout(() => { advance(1); }, CARD_SECONDS * 1000);
 }
 
 function advance(dir) {
