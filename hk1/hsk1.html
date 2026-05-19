@@ -11,6 +11,7 @@
     font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif;
     background: #0d0d1a;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     overflow: hidden;
     display: flex;
@@ -55,11 +56,13 @@
     z-index: 1;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px 12px;
+    padding: 10px 16px 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
   /* Top bar */
@@ -263,12 +266,12 @@
     border: 1px solid rgba(255,255,255,0.2);
     color: white;
     border-radius: 50px;
-    padding: 12px 18px;
-    font-size: 1rem;
+    padding: 10px 14px;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 48px;
-    min-height: 48px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -281,8 +284,8 @@
   .play-btn {
     background: linear-gradient(135deg, #7b2fff, #f7971e);
     border: none;
-    padding: 14px 32px;
-    font-size: 1.1rem;
+    padding: 11px 28px;
+    font-size: 1rem;
     font-weight: bold;
     flex: 1;
     max-width: 200px;
