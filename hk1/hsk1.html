@@ -481,6 +481,7 @@
   ช้า
 </div>
 
+<script src="hsk1-data.js"></script>
 <script>
 // วินาทีต่อใบ
 const SPEEDS = [2, 3, 5, 8, 12];
@@ -505,7 +506,7 @@ function speak(text) {
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
-  u.rate = 0.85;
+  u.rate = 1.85;
   u.pitch = 1.0;
   window.speechSynthesis.speak(u);
 }
@@ -618,14 +619,9 @@ document.addEventListener('touchend', e => {
   }
 }, { passive: true });
 
-// Init — โหลดข้อมูลจาก JSON
-fetch('hsk1-data.json')
-  .then(r => r.json())
-  .then(data => {
-    deck = data;
-    shuffle();
-  })
-  .catch(err => console.error('โหลด hsk1-data.json ไม่ได้:', err));
+// Init — โหลดข้อมูลจากตัวแปร HSK1_DATA (hsk1-data.js)
+deck = HSK1_DATA;
+shuffle();
 </script>
 </body>
 </html>
