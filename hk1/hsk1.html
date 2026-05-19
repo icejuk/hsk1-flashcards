@@ -543,8 +543,8 @@ function runPhase() {
   if (!isPlaying) return;
   const text = deck[idx].zh;
   speak(text);
-  // พูดรอบที่ 2 ที่ 2 วินาที
-  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, 2000);
+  // พูดรอบที่ 2 ที่ 1.5 วินาที
+  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, 1500);
   phaseTimer = setTimeout(() => { advance(1); }, CARD_SECONDS * 1000);
 }
 
