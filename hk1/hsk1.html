@@ -128,10 +128,12 @@
   /* Card area */
   .card-area {
     flex: 1;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
+    overflow: hidden;
   }
 
   /* Phase dots */
@@ -302,9 +304,11 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    justify-content: center;
     font-size: 0.75rem;
     opacity: 0.4;
-    margin-bottom: 2px;
+    margin-top: 4px;
+    width: 100%;
   }
 
   .speed-dot {
@@ -371,24 +375,30 @@
 
   /* =====================
      TV / Desktop — 1024px+ landscape
+     (เผื่อ overscan ของ TV ประมาณ 5% รอบขอบ)
   ===================== */
   @media (min-width: 1024px) and (orientation: landscape) {
-    .screen { padding: 28px 60px 20px; }
+    .screen {
+      padding: 3vh 5vw 2vh;
+      padding-bottom: max(2vh, env(safe-area-inset-bottom));
+      gap: 1vh;
+    }
     .badge { font-size: 1.1rem; padding: 8px 22px; letter-spacing: 2px; }
     .cat-badge { font-size: 1rem; padding: 8px 22px; }
     .progress-text { font-size: 1rem; }
     .progress-wrap { margin: 0 30px; }
 
-    .chinese { font-size: clamp(140px, 17vw, 210px); }
-    .pinyin  { font-size: clamp(72px, 8.5vw, 110px); min-height: 100px; }
-    .thai    { font-size: clamp(36px, 4vw, 56px); }
-    .thpy    { font-size: clamp(60px, 6.5vw, 90px); }
-    .english { font-size: clamp(16px, 2vw, 24px); }
+    .chinese { font-size: clamp(100px, 13vw, 170px); }
+    .chinese.sentence { font-size: clamp(60px, 7vw, 100px); letter-spacing: 4px; }
+    .pinyin  { font-size: clamp(50px, 6.5vw, 84px); min-height: 70px; }
+    .thai    { font-size: clamp(28px, 3.2vw, 44px); }
+    .thpy    { font-size: clamp(44px, 5vw, 64px); }
+    .english { font-size: clamp(14px, 1.6vw, 20px); }
     .phase-label { font-size: 1.2rem; margin-top: 28px; }
 
-    .ctrl-btn { padding: 14px 28px; font-size: 1.2rem; }
-    .play-btn { font-size: 1.4rem; padding: 16px 52px; }
-    .bottombar { gap: 16px; }
+    .ctrl-btn { padding: 12px 22px; font-size: 1.1rem; }
+    .play-btn { font-size: 1.3rem; padding: 14px 44px; }
+    .bottombar { gap: 16px; margin-bottom: 6px; }
 
     .timer-wrap { top: auto; bottom: 90px; right: 60px; }
     .timer-arc svg { width: 70px; height: 70px; }
@@ -422,6 +432,18 @@
 
     .divider { opacity: 0.2; }
     .swipe-hint { display: none; }
+    .speed-bar { font-size: 0.9rem; }
+    .speed-dot { min-width: 24px; min-height: 24px; }
+  }
+
+  /* =====================
+     TV ใหญ่มาก — 1600px+ ใช้ overscan เพิ่ม
+  ===================== */
+  @media (min-width: 1600px) and (orientation: landscape) {
+    .screen {
+      padding: 5vh 7vw 4vh;
+      padding-bottom: max(4vh, env(safe-area-inset-bottom));
+    }
   }
 </style>
 </head>
@@ -464,6 +486,18 @@
     <button class="ctrl-btn play-btn" id="playBtn" onclick="togglePlay()">▶ เริ่ม</button>
     <button class="ctrl-btn" onclick="advance(1)">▶▶</button>
   </div>
+
+  <!-- Speed bar -->
+  <div class="speed-bar" id="speedBar">
+    เร็ว
+    <div class="speed-dot" data-i="0" onclick="setSpeed(0)"></div>
+    <div class="speed-dot" data-i="1" onclick="setSpeed(1)"></div>
+    <div class="speed-dot active" data-i="2" onclick="setSpeed(2)"></div>
+    <div class="speed-dot" data-i="3" onclick="setSpeed(3)"></div>
+    <div class="speed-dot" data-i="4" onclick="setSpeed(4)"></div>
+    ช้า
+  </div>
+
   <!-- Key hints -->
   <div class="keyhints">
     <div class="key-hint"><span class="key">←</span><span class="key">→</span> เปลี่ยนใบ</div>
@@ -485,18 +519,6 @@
     </svg>
   </div>
   <div class="timer-num" id="timerNum">5</div>
-</div>
-
-<!-- Speed bar -->
-<div class="speed-bar" id="speedBar">
-  เร็ว
-  <div class="speed-dot" data-i="0" onclick="setSpeed(0)"></div>
-  <div class="speed-dot" data-i="1" onclick="setSpeed(1)"></div>
-  <div class="speed-dot active" data-i="2" onclick="setSpeed(2)"></div>
-  <div class="speed-dot" data-i="3" onclick="setSpeed(3)"></div>
-  <div class="speed-dot" data-i="4" onclick="setSpeed(4)"></div>
-  <!-- ตรงกลาง = 0.85 (rate ปกติ) -->
-  ช้า
 </div>
 
 <script src="hsk1-data.js"></script>
