@@ -1,5 +1,5 @@
 // อัพเดท version ทุกครั้งที่ deploy ใหม่ — บังคับโหลด cache ใหม่
-const CACHE = 'hsk1-v3';
+const CACHE = 'hsk1-v6';
 const FILES = [
   '/hsk1-flashcards/hk1/hsk1.html',
   '/hsk1-flashcards/hk1/hsk1-data.js',

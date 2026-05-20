@@ -111,7 +111,7 @@
     height: 100%;
     background: linear-gradient(90deg, #7b2fff, #ff6b2f);
     border-radius: 10px;
-    transition: width 0.6s ease;
+    transition: width 0.25s ease;
   }
 
   .progress-text { font-size: 0.8rem; opacity: 0.6; }
@@ -557,10 +557,12 @@
 <script src="hsk1-data.js"></script>
 <script>
 // ความเร็วในการพูด (TTS rate) — ซ้าย=เร็ว, ขวา=ช้า
-const RATES = [1.2, 1.0, 0.75, 0.55, 0.4];
-let speedIdx = 2; // default 0.85
-// วินาทีต่อใบ (คงที่)
-const CARD_SECONDS = 4;
+const RATES = [1.0, 0.8, 0.6, 0.45, 0.3];
+let speedIdx = 2; // default 0.6 (ช้าลง พูดชัด)
+// วินาทีต่อใบ
+const CARD_SECONDS = 5;
+// ระยะห่างระหว่างพูดรอบ 1 → รอบ 2
+const REPEAT_GAP_MS = 2200;
 
 let deck = [];
 let idx = 0;
@@ -576,13 +578,50 @@ function setSpeed(i) {
 }
 
 
+// Cache เสียงที่เลือก เพื่อไม่ต้องค้นหาทุกครั้ง
+let zhVoice = null;
+
+function pickVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  // เน้น Mandarin (zh-CN) ผู้หญิงและคม
+  const zhVoices = voices.filter(v =>
+    v.lang && (v.lang.toLowerCase().startsWith('zh-cn') || v.lang.toLowerCase() === 'zh')
+  );
+  if (!zhVoices.length) return null;
+
+  // จัดลำดับความชอบ — ชื่อเสียงผู้หญิงที่คมและดังกว่า
+  const preferOrder = [
+    'tingting', 'ting-ting',           // Mac classic ✨ คมสุด
+    'meijia', 'mei-jia',                // Mac Taiwan female
+    'xiaoxiao', 'yaoyao',               // Edge/Win female
+    'sandy', 'shelley', 'flo',          // Mac newer female
+    'google.*female', 'female', 'woman' // generic female
+  ];
+  for (const pat of preferOrder) {
+    const re = new RegExp(pat, 'i');
+    const found = zhVoices.find(v => re.test(v.name));
+    if (found) return found;
+  }
+  return zhVoices[0];
+}
+
+// โหลดเสียงเมื่อ available (Chrome โหลด async)
+function loadVoice() {
+  zhVoice = pickVoice();
+}
+loadVoice();
+window.speechSynthesis.onvoiceschanged = loadVoice;
+
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
+  if (zhVoice) u.voice = zhVoice;
   u.rate = RATES[speedIdx];
-  u.pitch = 1.0;
+  u.pitch = 1.25;   // pitch สูงขึ้น = ฟังคมกว่า
+  u.volume = 1.0;
   window.speechSynthesis.speak(u);
 }
 
@@ -615,8 +654,8 @@ function runPhase() {
   if (!isPlaying) return;
   const text = deck[idx].zh;
   speak(text);
-  // พูดรอบที่ 2 ที่ 1.5 วินาที
-  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, 1500);
+  // พูดรอบที่ 2
+  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, REPEAT_GAP_MS);
   phaseTimer = setTimeout(() => { advance(1); }, CARD_SECONDS * 1000);
 }
 
@@ -644,10 +683,26 @@ function togglePlay() {
 }
 
 function shuffle() {
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
+  // จัดกลุ่ม: คู่ตรงข้ามรวมเป็น chunk 2 ใบ — sang อื่นเป็น chunk 1 ใบ
+  const groups = [];
+  let i = 0;
+  while (i < HSK1_DATA.length) {
+    const cur = HSK1_DATA[i];
+    const nxt = HSK1_DATA[i + 1];
+    if (cur.cat === 'คู่ตรงข้าม' && nxt && nxt.cat === 'คู่ตรงข้าม') {
+      groups.push([cur, nxt]);  // คู่ตรงข้าม → 2-card chunk
+      i += 2;
+    } else {
+      groups.push([cur]);
+      i++;
+    }
   }
+  // Fisher-Yates shuffle ระดับ chunk
+  for (let g = groups.length - 1; g > 0; g--) {
+    const r = Math.floor(Math.random() * (g + 1));
+    [groups[g], groups[r]] = [groups[r], groups[g]];
+  }
+  deck = groups.flat();
   idx = 0;
   updateCard(false);
   clearPhase();
