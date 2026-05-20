@@ -1,22 +1,36 @@
 {
+  "id": "/hsk1-flashcards/hk1/",
   "name": "HSK1 Flashcards",
   "short_name": "HSK1",
-  "description": "คำศัพท์จีน HSK1 พร้อมเสียง",
+  "description": "คำศัพท์จีน HSK1 พร้อมเสียง — เรียนผ่าน flashcards",
   "start_url": "/hsk1-flashcards/hk1/hsk1.html",
+  "scope": "/hsk1-flashcards/hk1/",
   "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#0d0d1a",
   "theme_color": "#7b2fff",
-  "orientation": "portrait",
+  "orientation": "any",
+  "lang": "th",
+  "dir": "ltr",
+  "categories": ["education", "books"],
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
