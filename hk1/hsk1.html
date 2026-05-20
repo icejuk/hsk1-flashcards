@@ -359,6 +359,39 @@
   .animate-in { animation: slideIn 0.35s ease; }
 
   /* =====================
+     LANDSCAPE เตี้ย — มือถือแนวนอน (max-height: 500px)
+  ===================== */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .screen {
+      padding: 4px 12px;
+      padding-bottom: max(4px, env(safe-area-inset-bottom));
+      gap: 2px;
+    }
+    .topbar { gap: 6px; }
+    .badge, .cat-badge { font-size: 0.7rem; padding: 3px 10px; }
+    .progress-text { font-size: 0.65rem; }
+    .progress-bar { height: 3px; }
+    .progress-wrap { margin: 0 6px; gap: 2px; }
+
+    .chinese          { font-size: clamp(28px, 7vh, 60px); }
+    .chinese.sentence { font-size: clamp(20px, 5vh, 36px); letter-spacing: 1px; }
+    .pinyin           { font-size: clamp(18px, 5vh, 36px); min-height: 0; margin-top: 2px; letter-spacing: 1px; }
+    .thai             { font-size: clamp(14px, 4vh, 22px); }
+    .thpy             { font-size: clamp(16px, 4.5vh, 28px); }
+    .english          { font-size: clamp(10px, 2.5vh, 14px); margin-top: 0; }
+    .translation-wrap { margin-top: 2px; gap: 2px; }
+
+    .ctrl-btn { padding: 5px 10px; font-size: 0.85rem; min-width: 36px; min-height: 36px; }
+    .play-btn { padding: 6px 18px; font-size: 0.9rem; max-width: 160px; }
+    .bottombar { gap: 8px; margin-bottom: 2px; }
+
+    .speed-bar { font-size: 0.65rem; margin-top: 2px; gap: 5px; }
+    .speed-dot { min-width: 16px; min-height: 16px; }
+    .speed-dot::after { width: 5px; height: 5px; }
+    .swipe-hint { display: none; }
+  }
+
+  /* =====================
      TABLET — 600px+
   ===================== */
   @media (min-width: 600px) {
