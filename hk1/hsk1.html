@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="HSK1">
 <meta name="theme-color" content="#7b2fff">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-512.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <title>HSK1 Flashcards</title>
@@ -564,14 +564,16 @@ let speedIdx = 2; // default 0.6 (ช้าลง พูดชัด)
 const THAI_RATE_OFFSET = 0.2; // ให้เสียงไทยเร็วกว่าจีนเล็กน้อย
 // วินาทีต่อใบ
 const CARD_SECONDS = 5;
-// ระยะห่างระหว่างพูดรอบ 1 → รอบ 2
-const REPEAT_GAP_MS = 2200;
+// ระยะห่างหลังพูดจีน → ไทยครบหนึ่งรอบ ก่อนพูดซ้ำ
+const REPEAT_GAP_MS = 700;
+const THAI_START_DELAY_MS = 120;
 
 let deck = [];
 let idx = 0;
 let isPlaying = false;
 let phaseTimer = null;
 let repeatTimer = null;
+let speechGeneration = 0;
 
 function setSpeed(i) {
   speedIdx = i;
@@ -628,15 +630,37 @@ function createUtterance(text, lang, voice, rate) {
   return u;
 }
 
-function speakCard(word) {
+function cancelSpeech() {
+  speechGeneration++;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function speakCard(word, generation, onComplete) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const chinese = createUtterance(word.zh, 'zh-CN', zhVoice, RATES[speedIdx]);
   const thaiRate = Math.min(1.0, RATES[speedIdx] + THAI_RATE_OFFSET);
   const thai = createUtterance(word.th, 'th-TH', thVoice, thaiRate);
-  // speechSynthesis จะอ่านตามลำดับ: จีน → ไทย
+
+  let thaiStarted = false;
+  const speakThai = () => {
+    if (thaiStarted || generation !== speechGeneration) return;
+    thaiStarted = true;
+    window.setTimeout(() => {
+      if (generation === speechGeneration) window.speechSynthesis.speak(thai);
+    }, THAI_START_DELAY_MS);
+  };
+
+  // ให้รอเสียงจีนจบก่อน เพื่อไม่ให้ browser ข้าม utterance ภาษาไทย
+  chinese.onend = speakThai;
+  chinese.onerror = speakThai;
+  thai.onend = () => {
+    if (generation === speechGeneration && onComplete) onComplete();
+  };
+  thai.onerror = () => {
+    if (generation === speechGeneration && onComplete) onComplete();
+  };
   window.speechSynthesis.speak(chinese);
-  window.speechSynthesis.speak(thai);
 }
 
 function updateCard(animate) {
@@ -662,14 +686,22 @@ function updateCard(animate) {
 function clearPhase() {
   clearTimeout(phaseTimer);
   clearTimeout(repeatTimer);
+  cancelSpeech();
 }
 
 function runPhase() {
   if (!isPlaying) return;
   const word = deck[idx];
-  speakCard(word);
-  // พูดรอบที่ 2: จีน → ไทย
-  repeatTimer = setTimeout(() => { if (isPlaying) speakCard(word); }, REPEAT_GAP_MS);
+  const generation = ++speechGeneration;
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  speakCard(word, generation, () => {
+    if (isPlaying && generation === speechGeneration) {
+      // พูดรอบที่ 2 หลังจากรอบแรกอ่านจีนและไทยครบแล้ว
+      repeatTimer = setTimeout(() => {
+        if (isPlaying && generation === speechGeneration) speakCard(word, generation);
+      }, REPEAT_GAP_MS);
+    }
+  });
   phaseTimer = setTimeout(() => { advance(1); }, CARD_SECONDS * 1000);
 }
 
@@ -685,7 +717,6 @@ function togglePlay() {
   const badge = document.getElementById('pausedBadge');
   if (!isPlaying) {
     clearPhase();
-    window.speechSynthesis && window.speechSynthesis.cancel();
     badge.classList.add('show');
     setTimeout(() => badge.classList.remove('show'), 1500);
     document.getElementById('playBtn').textContent = '▶ เริ่ม';
