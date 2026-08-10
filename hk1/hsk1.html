@@ -761,7 +761,8 @@ shuffle();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/hsk1-flashcards/hk1/sw.js');
+  // Keep the PWA working on both a Vercel root domain and a GitHub Pages subpath.
+  navigator.serviceWorker.register('./sw.js');
 }
 </script>
 </body>

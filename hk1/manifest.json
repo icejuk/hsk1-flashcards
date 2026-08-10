@@ -1,10 +1,10 @@
 {
-  "id": "/hsk1-flashcards/hk1/",
+  "id": "./",
   "name": "HSK1 Flashcards",
   "short_name": "HSK1",
   "description": "คำศัพท์จีน HSK1 พร้อมเสียง — เรียนผ่าน flashcards",
-  "start_url": "/hsk1-flashcards/hk1/hsk1.html",
-  "scope": "/hsk1-flashcards/hk1/",
+  "start_url": "./hsk1.html",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone"],
   "background_color": "#0d0d1a",

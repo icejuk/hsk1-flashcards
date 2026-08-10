@@ -1,12 +1,14 @@
 // อัพเดท version ทุกครั้งที่ deploy ใหม่ — บังคับโหลด cache ใหม่
-const CACHE = 'hsk1-v6';
+const CACHE = 'hsk1-v7';
+const BASE = new URL('./', self.registration.scope);
 const FILES = [
-  '/hsk1-flashcards/hk1/hsk1.html',
-  '/hsk1-flashcards/hk1/hsk1-data.js',
-  '/hsk1-flashcards/hk1/manifest.json',
-  '/hsk1-flashcards/hk1/icon-192.png',
-  '/hsk1-flashcards/hk1/icon-512.png'
-];
+  'hsk1.html',
+  'hsk1-data.js',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png',
+  'icon-maskable-512.png'
+].map(file => new URL(file, BASE).toString());
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
