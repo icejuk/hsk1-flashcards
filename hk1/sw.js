@@ -1,5 +1,5 @@
 // อัพเดท version ทุกครั้งที่ deploy ใหม่ — บังคับโหลด cache ใหม่
-const CACHE = 'hsk1-v7';
+const CACHE = 'hsk1-v8';
 const BASE = new URL('./', self.registration.scope);
 const FILES = [
   'hsk1.html',
