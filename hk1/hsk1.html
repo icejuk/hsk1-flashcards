@@ -559,6 +559,7 @@
 // ความเร็วในการพูด (TTS rate) — ซ้าย=เร็ว, ขวา=ช้า
 const RATES = [1.0, 0.8, 0.6, 0.45, 0.3];
 let speedIdx = 2; // default 0.6 (ช้าลง พูดชัด)
+const THAI_RATE_OFFSET = 0.2; // ให้เสียงไทยเร็วกว่าจีนเล็กน้อย
 // วินาทีต่อใบ
 const CARD_SECONDS = 5;
 // ระยะห่างระหว่างพูดรอบ 1 → รอบ 2
@@ -580,49 +581,60 @@ function setSpeed(i) {
 
 // Cache เสียงที่เลือก เพื่อไม่ต้องค้นหาทุกครั้ง
 let zhVoice = null;
+let thVoice = null;
 
-function pickVoice() {
+function pickVoice(langPrefix, preferOrder = []) {
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-  // เน้น Mandarin (zh-CN) ผู้หญิงและคม
-  const zhVoices = voices.filter(v =>
-    v.lang && (v.lang.toLowerCase().startsWith('zh-cn') || v.lang.toLowerCase() === 'zh')
-  );
-  if (!zhVoices.length) return null;
+  const languageVoices = voices.filter(v => {
+    if (!v.lang) return false;
+    const lang = v.lang.toLowerCase();
+    return lang === langPrefix || lang.startsWith(`${langPrefix}-`);
+  });
+  if (!languageVoices.length) return null;
 
-  // จัดลำดับความชอบ — ชื่อเสียงผู้หญิงที่คมและดังกว่า
-  const preferOrder = [
-    'tingting', 'ting-ting',           // Mac classic ✨ คมสุด
-    'meijia', 'mei-jia',                // Mac Taiwan female
-    'xiaoxiao', 'yaoyao',               // Edge/Win female
-    'sandy', 'shelley', 'flo',          // Mac newer female
-    'google.*female', 'female', 'woman' // generic female
-  ];
   for (const pat of preferOrder) {
     const re = new RegExp(pat, 'i');
-    const found = zhVoices.find(v => re.test(v.name));
+    const found = languageVoices.find(v => re.test(v.name));
     if (found) return found;
   }
-  return zhVoices[0];
+  return languageVoices[0];
 }
 
 // โหลดเสียงเมื่อ available (Chrome โหลด async)
 function loadVoice() {
-  zhVoice = pickVoice();
+  // เน้น Mandarin (zh-CN) ผู้หญิงและคม
+  zhVoice = pickVoice('zh', [
+    'tingting', 'ting-ting',           // Mac classic
+    'meijia', 'mei-jia',                // Mac Taiwan female
+    'xiaoxiao', 'yaoyao',               // Edge/Win female
+    'sandy', 'shelley', 'flo',          // Mac newer female
+    'google.*female', 'female', 'woman'
+  ]);
+  thVoice = pickVoice('th', []);
 }
 loadVoice();
 window.speechSynthesis.onvoiceschanged = loadVoice;
 
-function speak(text) {
+function createUtterance(text, lang, voice, rate) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang;
+  if (voice) u.voice = voice;
+  u.rate = rate;
+  u.pitch = 1.25;
+  u.volume = 1.0;
+  return u;
+}
+
+function speakCard(word) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-CN';
-  if (zhVoice) u.voice = zhVoice;
-  u.rate = RATES[speedIdx];
-  u.pitch = 1.25;   // pitch สูงขึ้น = ฟังคมกว่า
-  u.volume = 1.0;
-  window.speechSynthesis.speak(u);
+  const chinese = createUtterance(word.zh, 'zh-CN', zhVoice, RATES[speedIdx]);
+  const thaiRate = Math.min(1.0, RATES[speedIdx] + THAI_RATE_OFFSET);
+  const thai = createUtterance(word.th, 'th-TH', thVoice, thaiRate);
+  // speechSynthesis จะอ่านตามลำดับ: จีน → ไทย
+  window.speechSynthesis.speak(chinese);
+  window.speechSynthesis.speak(thai);
 }
 
 function updateCard(animate) {
@@ -652,10 +664,10 @@ function clearPhase() {
 
 function runPhase() {
   if (!isPlaying) return;
-  const text = deck[idx].zh;
-  speak(text);
-  // พูดรอบที่ 2
-  repeatTimer = setTimeout(() => { if (isPlaying) speak(text); }, REPEAT_GAP_MS);
+  const word = deck[idx];
+  speakCard(word);
+  // พูดรอบที่ 2: จีน → ไทย
+  repeatTimer = setTimeout(() => { if (isPlaying) speakCard(word); }, REPEAT_GAP_MS);
   phaseTimer = setTimeout(() => { advance(1); }, CARD_SECONDS * 1000);
 }
 
