@@ -92,6 +92,49 @@
     white-space: nowrap;
   }
 
+  .lesson-picker {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .lesson-picker select {
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 122px;
+    max-width: 138px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    letter-spacing: 0.4px;
+    overflow: hidden;
+    padding: 7px 30px 7px 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lesson-picker::after {
+    color: #ffd200;
+    content: '⌄';
+    font-size: 1rem;
+    pointer-events: none;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-58%);
+  }
+
+  .lesson-picker select:focus-visible {
+    outline: 2px solid #ffd200;
+    outline-offset: 2px;
+  }
+
+  .lesson-picker select:disabled { cursor: wait; opacity: 0.6; }
+  .lesson-picker option { background: #1a0d2e; color: white; }
+
   .progress-wrap {
     flex: 1;
     margin: 0 10px;
@@ -387,6 +430,7 @@
     .ctrl-btn { padding: 5px 10px; font-size: 0.85rem; min-width: 36px; min-height: 36px; }
     .play-btn { padding: 6px 18px; font-size: 0.9rem; max-width: 160px; }
     .bottombar { gap: 8px; margin-bottom: 2px; }
+    .lesson-picker select { min-width: 104px; max-width: 122px; padding: 4px 24px 4px 10px; font-size: 0.7rem; }
 
     .speed-bar { font-size: 0.65rem; margin-top: 2px; gap: 5px; }
     .speed-dot { min-width: 16px; min-height: 16px; }
@@ -400,6 +444,7 @@
   @media (min-width: 600px) {
     .screen { padding: 20px 36px 16px; }
     .badge, .cat-badge { font-size: 0.95rem; padding: 7px 18px; }
+    .lesson-picker select { min-width: 145px; max-width: 180px; padding: 7px 32px 7px 18px; font-size: 0.95rem; }
     .chinese { font-size: clamp(100px, 18vw, 160px); }
     .pinyin  { font-size: clamp(50px, 8vw, 76px); min-height: 70px; }
     .thai    { font-size: clamp(28px, 4vw, 44px); }
@@ -420,6 +465,7 @@
       gap: 1vh;
     }
     .badge { font-size: 1.1rem; padding: 8px 22px; letter-spacing: 2px; }
+    .lesson-picker select { min-width: 172px; max-width: 220px; padding: 8px 36px 8px 22px; font-size: 1.1rem; }
     .cat-badge { font-size: 1rem; padding: 8px 22px; }
     .progress-text { font-size: 1rem; }
     .progress-wrap { margin: 0 30px; }
@@ -495,7 +541,11 @@
 
   <!-- Top bar -->
   <div class="topbar">
-    <div class="badge">HSK 1</div>
+    <label class="lesson-picker">
+      <select id="lessonSelect" aria-label="เลือกบท" onchange="selectLesson(this.value)" disabled>
+        <option value="all">กำลังโหลด...</option>
+      </select>
+    </label>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>
       <div class="progress-text" id="pText">1 / 285</div>
@@ -572,6 +622,8 @@ const REPEAT_GAP_MS = 700;
 const THAI_START_DELAY_MS = 90;
 
 let deck = [];
+let allVocabulary = [];
+let lessons = [];
 let idx = 0;
 let isPlaying = false;
 let isDataReady = false;
@@ -775,10 +827,36 @@ function shuffle() {
   if (isPlaying) runPhase();
 }
 
+function populateLessonPicker() {
+  const select = document.getElementById('lessonSelect');
+  select.replaceChildren();
+
+  const allOption = new Option('HSK 1 · ทั้งหมด', 'all');
+  select.add(allOption);
+  lessons.forEach(lesson => {
+    const shortTitle = `บทที่ ${lesson.id} · ${lesson.zh}`;
+    select.add(new Option(shortTitle, String(lesson.id)));
+  });
+  select.disabled = false;
+}
+
+function selectLesson(lessonId) {
+  if (!isDataReady) return;
+  const selected = lessonId === 'all'
+    ? allVocabulary
+    : allVocabulary.filter(word => String(word.lessonId) === lessonId);
+
+  if (!selected.length) return;
+  deck = [...selected];
+  idx = 0;
+  shuffle();
+}
+
 function setControlsDisabled(disabled) {
   document.querySelectorAll('.bottombar button').forEach(button => {
     button.disabled = disabled;
   });
+  document.getElementById('lessonSelect').disabled = disabled;
 }
 
 function showLoadError() {
@@ -803,23 +881,27 @@ async function loadRemoteVocabulary() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const source = await response.json();
-    const latestVocabulary = (source.lessons || []).flatMap(lesson =>
+    lessons = (source.lessons || []).filter(lesson => lesson.id && lesson.zh);
+    const latestVocabulary = lessons.flatMap(lesson =>
       (lesson.vocab || []).map(word => ({
         zh: word.zh,
         py: word.py,
         th: word.th,
         tp: '',
         en: '',
-        cat: `บทที่ ${lesson.id}`
+        cat: `บทที่ ${lesson.id}`,
+        lessonId: lesson.id
       }))
     ).filter(word => word.zh && word.py && word.th);
 
     if (!latestVocabulary.length) throw new Error('No vocabulary returned');
 
-    deck = latestVocabulary;
+    allVocabulary = latestVocabulary;
+    deck = [...allVocabulary];
     idx = 0;
     isDataReady = true;
     setControlsDisabled(false);
+    populateLessonPicker();
     shuffle();
   } catch (error) {
     console.error('Unable to load current vocabulary', error);
