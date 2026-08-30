@@ -1,9 +1,8 @@
 // อัพเดท version ทุกครั้งที่ deploy ใหม่ — บังคับโหลด cache ใหม่
-const CACHE = 'hsk1-v10';
+const CACHE = 'hsk1-v12';
 const BASE = new URL('./', self.registration.scope);
 const FILES = [
   'hsk1.html',
-  'hsk1-data.js',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
@@ -26,6 +25,8 @@ self.addEventListener('activate', e => {
 // Network-first: ดึงของใหม่ก่อน ถ้าเน็ตล่มค่อยใช้ cache
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // ข้อมูลคำศัพท์จาก chinese.icejuk.dev ต้องผ่านเครือข่ายทุกครั้ง ไม่เก็บใน PWA cache
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request)
       .then(res => {

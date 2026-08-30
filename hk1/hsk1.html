@@ -290,6 +290,7 @@
 
   .ctrl-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
   .ctrl-btn:active { transform: scale(0.93); background: rgba(255,255,255,0.3); }
+  .ctrl-btn:disabled { cursor: wait; opacity: 0.45; transform: none; }
 
   .play-btn {
     background: linear-gradient(135deg, #7b2fff, #f7971e);
@@ -556,10 +557,10 @@
   <div class="timer-num" id="timerNum">5</div>
 </div>
 
-<script src="hsk1-data.js"></script>
 <script>
 // ความเร็วในการพูด (TTS rate) — ซ้าย=เร็ว, ขวา=ช้า
 const RATES = [1.0, 0.8, 0.6, 0.45, 0.3];
+const REMOTE_DATA_URL = 'https://chinese.icejuk.dev/api/writing-exercises.json';
 let speedIdx = 2; // default 0.6 (ช้าลง พูดชัด)
 const THAI_RATE_OFFSET = 0.2; // ให้เสียงไทยเร็วกว่าจีนเล็กน้อย
 const CHINESE_PITCH = 1.25;
@@ -573,6 +574,7 @@ const THAI_START_DELAY_MS = 90;
 let deck = [];
 let idx = 0;
 let isPlaying = false;
+let isDataReady = false;
 let phaseTimer = null;
 let repeatTimer = null;
 let speechGeneration = 0;
@@ -667,6 +669,7 @@ function speakCard(word, generation, onComplete) {
 
 function updateCard(animate) {
   const w = deck[idx];
+  if (!w) return;
   const el = document.getElementById('card');
   if (animate) {
     el.classList.remove('animate-in');
@@ -692,7 +695,7 @@ function clearPhase() {
 }
 
 function runPhase() {
-  if (!isPlaying) return;
+  if (!isPlaying || !isDataReady) return;
   const word = deck[idx];
   const generation = ++speechGeneration;
   const startedAt = performance.now();
@@ -721,6 +724,7 @@ function runPhase() {
 }
 
 function advance(dir) {
+  if (!isDataReady) return;
   clearPhase();
   idx = (idx + dir + deck.length) % deck.length;
   updateCard(dir > 0);
@@ -728,6 +732,7 @@ function advance(dir) {
 }
 
 function togglePlay() {
+  if (!isDataReady) return;
   isPlaying = !isPlaying;
   const badge = document.getElementById('pausedBadge');
   if (!isPlaying) {
@@ -743,12 +748,13 @@ function togglePlay() {
 }
 
 function shuffle() {
+  if (!isDataReady) return;
   // จัดกลุ่ม: คู่ตรงข้ามรวมเป็น chunk 2 ใบ — sang อื่นเป็น chunk 1 ใบ
   const groups = [];
   let i = 0;
-  while (i < HSK1_DATA.length) {
-    const cur = HSK1_DATA[i];
-    const nxt = HSK1_DATA[i + 1];
+  while (i < deck.length) {
+    const cur = deck[i];
+    const nxt = deck[i + 1];
     if (cur.cat === 'คู่ตรงข้าม' && nxt && nxt.cat === 'คู่ตรงข้าม') {
       groups.push([cur, nxt]);  // คู่ตรงข้าม → 2-card chunk
       i += 2;
@@ -767,6 +773,58 @@ function shuffle() {
   updateCard(false);
   clearPhase();
   if (isPlaying) runPhase();
+}
+
+function setControlsDisabled(disabled) {
+  document.querySelectorAll('.bottombar button').forEach(button => {
+    button.disabled = disabled;
+  });
+}
+
+function showLoadError() {
+  document.getElementById('chinese').textContent = 'โหลดไม่ได้';
+  document.getElementById('pinyin').textContent = '';
+  document.getElementById('thpy').textContent = '';
+  document.getElementById('thai').textContent = 'กรุณาตรวจสอบการเชื่อมต่อกับ chinese.icejuk.dev';
+  document.getElementById('english').textContent = '';
+  document.getElementById('catBadge').textContent = 'โหลดข้อมูลไม่สำเร็จ';
+  document.getElementById('pText').textContent = '—';
+}
+
+async function loadRemoteVocabulary() {
+  setControlsDisabled(true);
+  document.getElementById('chinese').textContent = 'กำลังโหลด';
+  document.getElementById('pinyin').textContent = 'chinese.icejuk.dev';
+  document.getElementById('thai').textContent = 'กำลังอ่านคำศัพท์ล่าสุด';
+
+  try {
+    // เติม query ใหม่และไม่ใช้ HTTP cache เพื่ออ่านข้อมูลล่าสุดทุกครั้งที่เปิด
+    const response = await fetch(`${REMOTE_DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const source = await response.json();
+    const latestVocabulary = (source.lessons || []).flatMap(lesson =>
+      (lesson.vocab || []).map(word => ({
+        zh: word.zh,
+        py: word.py,
+        th: word.th,
+        tp: '',
+        en: '',
+        cat: `บทที่ ${lesson.id}`
+      }))
+    ).filter(word => word.zh && word.py && word.th);
+
+    if (!latestVocabulary.length) throw new Error('No vocabulary returned');
+
+    deck = latestVocabulary;
+    idx = 0;
+    isDataReady = true;
+    setControlsDisabled(false);
+    shuffle();
+  } catch (error) {
+    console.error('Unable to load current vocabulary', error);
+    showLoadError();
+  }
 }
 
 // Keyboard — TV remote / desktop
@@ -815,14 +873,22 @@ document.addEventListener('touchend', e => {
   }
 }, { passive: true });
 
-// Init — โหลดข้อมูลจากตัวแปร HSK1_DATA (hsk1-data.js)
-deck = HSK1_DATA;
-shuffle();
+// Init — อ่านคำศัพท์ล่าสุดจากเว็บต้นทางทุกครั้งที่เปิด
+loadRemoteVocabulary();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
   // Keep the PWA working on both a Vercel root domain and a GitHub Pages subpath.
-  navigator.serviceWorker.register('./sw.js');
+  let reloadingForUpdate = false;
+  navigator.serviceWorker.register('./sw.js').then(registration => {
+    // ตรวจหา Service Worker ใหม่ทุกครั้งที่เปิด เพื่อให้ PWA ที่ติดตั้งไว้ไม่ค้างเวอร์ชันเก่า
+    registration.update();
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    window.location.reload();
+  });
 }
 </script>
 </body>
