@@ -783,11 +783,39 @@ function advance(dir) {
   if (isPlaying) runPhase();
 }
 
+// กันหน้าจอดับระหว่างเล่นอัตโนมัติ (Screen Wake Lock API)
+let wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator) || wakeLock || document.visibilityState !== 'visible') return;
+  try {
+    const lock = await navigator.wakeLock.request('screen');
+    // ถ้ากดหยุดระหว่างรอ ให้ปล่อยทันที ไม่ให้ lock ค้าง
+    if (!isPlaying || wakeLock) { lock.release().catch(() => {}); return; }
+    wakeLock = lock;
+    lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; });
+  } catch (error) {
+    console.warn('Wake Lock not available', error);
+  }
+}
+
+function releaseWakeLock() {
+  if (!wakeLock) return;
+  wakeLock.release().catch(() => {});
+  wakeLock = null;
+}
+
+// ระบบจะปล่อย wake lock เองเมื่อสลับแอป/ล็อกจอ — ขอใหม่เมื่อกลับมาและยังเล่นอยู่
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isPlaying) requestWakeLock();
+});
+
 function togglePlay() {
   if (!isDataReady) return;
   isPlaying = !isPlaying;
   const badge = document.getElementById('pausedBadge');
   if (!isPlaying) {
+    releaseWakeLock();
     clearPhase();
     badge.classList.add('show');
     setTimeout(() => badge.classList.remove('show'), 1500);
@@ -795,6 +823,7 @@ function togglePlay() {
   } else {
     badge.classList.remove('show');
     document.getElementById('playBtn').textContent = '⏸ หยุด';
+    requestWakeLock();
     runPhase();
   }
 }
